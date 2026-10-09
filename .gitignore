@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Temporary debug and test scripts
+/scratch_*
+/create_pages.js
+/replace-brand.js
+
+# Demo account seeding script
+/seed-demo.js
