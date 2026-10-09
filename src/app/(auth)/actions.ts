@@ -16,18 +16,19 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    // In a real app we'd want to return this error or redirect with error param
-    redirect('/login?message=Could not authenticate user')
+    console.error('LOGIN ERROR:', error.message)
+    redirect(`/login?message=${encodeURIComponent(error.message)}`)
   }
 
-  // Ambil role dari tabel profiles
   let role = 'jamaah'
+
   if (data?.user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', data.user.id)
       .single()
+
     if (profile?.role) {
       role = profile.role
     }
@@ -35,7 +36,6 @@ export async function login(formData: FormData) {
 
   revalidatePath('/', 'layout')
 
-  // Arahkan ke dashboard yang sesuai
   if (role === 'superadmin') {
     redirect('/dashboard/superadmin')
   } else if (role === 'admin') {
@@ -52,20 +52,23 @@ export async function signup(formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
         name,
-        role: 'jamaah', // default role
+        role: 'jamaah',
       },
     },
   })
 
   if (error) {
-    redirect('/register?message=Could not create user')
+    console.error('SIGNUP ERROR:', error.message)
+    redirect(`/register?message=${encodeURIComponent(error.message)}`)
   }
+
+  console.log('SIGNUP SUCCESS:', data.user?.id)
 
   revalidatePath('/', 'layout')
   redirect('/dashboard/jamaah')
@@ -76,3 +79,4 @@ export async function signout() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
