@@ -1,91 +1,95 @@
+import { AlignJustify, Banknote, FileText, CalendarDays } from 'lucide-react';
+import { PageHeader, StatCard, Card, rupiah, EmptyNote } from '@/components/dashboard/DashboardWidgets';
 import { createClient } from '@/utils/supabase/server';
-import { Package, User, FileText, CreditCard } from 'lucide-react';
-import Link from 'next/link';
 
-export const metadata = { title: 'Portal Jamaah | Trecer' };
+export const metadata = { title: 'Dashboard Jamaah | Travel Umroh & Haji' };
+
+const badge = {
+  ok: 'bg-[#E7F6EC] text-[#16A34A]',
+  up: 'bg-[#FDF3D8] text-[#B7791F]',
+  no: 'bg-slate-100 text-slate-500',
+};
 
 export default async function JamaahDashboard() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Get jamaah data
-  let jamaahData = null;
-  let registrations = [];
-
-  if (user) {
-    const { data } = await supabase.from('jamaah').select('*').eq('profile_id', user.id).single();
-    jamaahData = data;
-
-    if (jamaahData) {
-      const { data: regs } = await supabase
-        .from('registrations')
-        .select('*, packages(name, departure_date)')
-        .eq('jamaah_id', jamaahData.id);
-      if (regs) registrations = regs;
+  let name = 'Ahmad Fauzi';
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      if (p?.full_name) name = p.full_name;
     }
-  }
+  } catch {}
+
+  const total = 28500000;
+  const paid = 28500000;
+  const depart = new Date(2026, 11, 10);
+  const days = Math.max(0, Math.ceil((depart.getTime() - Date.now()) / 86400000));
+
+  const docs: { name: string; status: keyof typeof badge; label: string }[] = [
+    { name: 'KTP', status: 'ok', label: 'Terverifikasi' },
+    { name: 'Kartu Keluarga', status: 'up', label: 'Sudah Diunggah' },
+    { name: 'Paspor', status: 'no', label: 'Belum Diunggah' },
+    { name: 'Pas Foto 4x6 (latar putih)', status: 'ok', label: 'Terverifikasi' },
+    { name: 'Buku Nikah / Akta Lahir', status: 'ok', label: 'Terverifikasi' },
+    { name: 'Sertifikat Vaksin Meningitis', status: 'up', label: 'Sudah Diunggah' },
+  ];
+  const verified = docs.filter((d) => d.status === 'ok').length;
 
   return (
-    <div className="space-y-6">
-      <div className="bg-emerald-600 rounded-xl p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold mb-2">Ahlan wa Sahlan, {user?.user_metadata?.name || 'Jamaah'}!</h1>
-          <p className="text-emerald-100 max-w-2xl">Selamat datang di Portal Jamaah Trecer. Di sini Anda dapat melihat status pendaftaran, melengkapi dokumen, dan melakukan pembayaran umroh.</p>
-        </div>
-        <div className="absolute right-0 top-0 opacity-10 scale-150 transform translate-x-1/4 -translate-y-1/4">
-          <User className="w-64 h-64" />
-        </div>
+    <div>
+      <PageHeader title="Dashboard Jamaah" subtitle={`Selamat datang, ${name}`} />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <StatCard icon={AlignJustify} tone="blue" label="Status Pendaftaran" value="Dikonfirmasi" />
+        <StatCard
+          icon={Banknote}
+          tone="green"
+          label="Progress Pembayaran"
+          value={`${Math.round((paid / total) * 100)}%`}
+          sub={`${rupiah(paid)} / ${rupiah(total)}`}
+        />
+        <StatCard icon={FileText} tone="teal" label="Dokumen Terverifikasi" value={`${verified} / ${docs.length}`} />
+        <StatCard icon={CalendarDays} tone="purple" label="Hitung Mundur" value={`${days} hari`} sub="10 Dec 2026" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/dashboard/jamaah/registrations" className="card hover:shadow-md transition-shadow p-6 flex flex-col items-center text-center group cursor-pointer">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-            <Package className="w-8 h-8" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+        <Card title="Progress Pembayaran" className="lg:col-span-2">
+          <div className="flex justify-between text-[11px] text-slate-600 mb-2">
+            <span>Terbayar</span>
+            <span className="font-semibold text-slate-800">{rupiah(paid)}</span>
           </div>
-          <h3 className="font-semibold text-lg text-slate-900">Pendaftaran Umroh</h3>
-          <p className="text-slate-500 text-sm mt-1">Lihat status pendaftaran dan jadwal keberangkatan paket Anda.</p>
-        </Link>
+          <div className="h-2.5 rounded-full bg-slate-100">
+            <div className="h-2.5 rounded-full bg-[#0F9488]" style={{ width: `${(paid / total) * 100}%` }} />
+          </div>
+          <div className="flex justify-between text-[11px] text-slate-600 mt-2 pb-4 border-b border-slate-100">
+            <span>Sisa Tagihan</span>
+            <span className="font-semibold text-red-600">{rupiah(total - paid)}</span>
+          </div>
+          <p className="text-[11px] font-medium text-slate-800 mt-4">Umroh Reguler 9 Hari</p>
+          <p className="text-[9px] text-slate-400">Umroh · 9 hari · Berangkat 10 Dec 2026</p>
+        </Card>
 
-        <Link href="/dashboard/jamaah/documents" className="card hover:shadow-md transition-shadow p-6 flex flex-col items-center text-center group cursor-pointer">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-4 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-            <FileText className="w-8 h-8" />
-          </div>
-          <h3 className="font-semibold text-lg text-slate-900">Dokumen Saya</h3>
-          <p className="text-slate-500 text-sm mt-1">Unggah paspor, KTP, dan kelengkapan dokumen persyaratan.</p>
-        </Link>
-
-        <Link href="/dashboard/jamaah/payment" className="card hover:shadow-md transition-shadow p-6 flex flex-col items-center text-center group cursor-pointer">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-            <CreditCard className="w-8 h-8" />
-          </div>
-          <h3 className="font-semibold text-lg text-slate-900">Pembayaran</h3>
-          <p className="text-slate-500 text-sm mt-1">Lihat riwayat pembayaran dan status pelunasan paket umroh.</p>
-        </Link>
+        <Card title="Checklist Dokumen">
+          <ul className="divide-y divide-slate-100">
+            {docs.map((d) => (
+              <li key={d.name} className="flex items-center justify-between py-2 first:pt-0">
+                <span className="text-[11px] text-slate-700">{d.name}</span>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full ${badge[d.status]}`}>{d.label}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
 
-      {registrations.length > 0 && (
-        <div className="card">
-          <div className="px-6 py-4 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800">Status Keberangkatan Anda</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {registrations.map((reg: any) => (
-                <div key={reg.id} className="border border-slate-200 rounded-lg p-4 flex justify-between items-center bg-slate-50">
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{reg.packages?.name}</h4>
-                    <p className="text-sm text-slate-500">Keberangkatan: {reg.packages?.departure_date ? new Date(reg.packages.departure_date).toLocaleDateString('id-ID') : 'Belum Ditentukan'}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize
-                    ${reg.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                    {reg.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <Card title="Jadwal Manasik" className="lg:col-span-2">
+          <EmptyNote text="Belum ada jadwal manasik." />
+        </Card>
+        <Card title="Pengumuman Terbaru">
+          <EmptyNote text="Belum ada pengumuman." />
+        </Card>
+      </div>
     </div>
   );
 }

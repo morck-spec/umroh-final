@@ -1,0 +1,28 @@
+[
+  {
+    "id": "2645bf25-d00a-4687-b449-067e076c3144",
+    "legacy_id": "1",
+    "title": "Pelunasan Umroh Reguler",
+    "content": "Mohon segera melunasi biaya paket Umroh Reguler sebelum H-30 keberangkatan.",
+    "audience": "Jamaah",
+    "branch": "Kantor Pusat Jakarta",
+    "package_name": "Semua Paket",
+    "starts_at": "2026-10-13T06:08",
+    "expires_at": "",
+    "is_published": true,
+    "publish_formatted": "13 Oct 2026 06:08"
+  },
+  {
+    "id": "0238ca6a-8c5f-4944-95c4-7e022e9888bc",
+    "legacy_id": "2",
+    "title": "Target Komisi bulanan",
+    "content": "Pemberitahuan mengenai pencapaian target komisi bulanan untuk seluruh mitra agen.",
+    "audience": "Agen",
+    "branch": "Kantor Pusat Jakarta",
+    "package_name": "Semua Paket",
+    "starts_at": "2026-10-11T06:08",
+    "expires_at": "",
+    "is_published": true,
+    "publish_formatted": "11 Oct 2026 06:08"
+  }
+]

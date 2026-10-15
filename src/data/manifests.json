@@ -1,0 +1,152 @@
+[
+  {
+    "id": "4",
+    "package_id": "411878bc-52f2-4bbf-9beb-e8b4ce104bbb",
+    "package_name": "Haji Plus Eksklusif",
+    "package_code": "PKG-HAJP",
+    "package_type": "Haji Plus",
+    "passenger_count": 2,
+    "departure_date": "10 Apr 2027",
+    "items": [
+      {
+        "id": "8462ae61-3e38-4ad1-a44c-411c7a923e2c",
+        "jamaah_id": "f6047bbe-b64a-4fe4-ac9b-a06d752e4c07",
+        "jamaah_name": "Indra Kusuma",
+        "registration_code": "REG-00009",
+        "room_number": "102",
+        "room_type": "Double",
+        "bus_number": "BUS-1",
+        "seat_number": "9",
+        "mahram_group": "GRUP-A"
+      },
+      {
+        "id": "811d32ad-9294-4267-b50b-32135d3dedc5",
+        "jamaah_id": "187db6f7-b61f-485a-a1a8-e33ea553fbc0",
+        "jamaah_name": "Dewi Anggraini",
+        "registration_code": "REG-00004",
+        "room_number": "100",
+        "room_type": "Quad",
+        "bus_number": "BUS-2",
+        "seat_number": "4",
+        "mahram_group": "GRUP-D"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "package_id": "41ae616a-c4ec-421f-9ca0-771a17be1a7a",
+    "package_name": "Haji Khusus 2026",
+    "package_code": "PKG-HAJK",
+    "package_type": "Haji",
+    "passenger_count": 2,
+    "departure_date": "10 Feb 2027",
+    "items": [
+      {
+        "id": "cfd6b674-f4f2-4d5d-a878-3390fa9267b2",
+        "jamaah_id": "c2ee6833-f304-4a47-892a-3cb90ddcde11",
+        "jamaah_name": "Hesti Purnama",
+        "registration_code": "REG-00008",
+        "room_number": "201",
+        "room_type": "Double",
+        "bus_number": "BUS-1",
+        "seat_number": "1",
+        "mahram_group": "GRUP-B"
+      },
+      {
+        "id": "563becd1-3185-4cf8-8217-c8877637f160",
+        "jamaah_id": "a422ccf4-4c8d-426b-9e95-108275c04a8d",
+        "jamaah_name": "Ahmad Fauzi",
+        "registration_code": "REG-00001",
+        "room_number": "201",
+        "room_type": "Double",
+        "bus_number": "BUS-1",
+        "seat_number": "2",
+        "mahram_group": "GRUP-B"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "package_id": "4cc85b01-738a-4d94-abc5-090d96f14e4e",
+    "package_name": "Umroh Plus Turki 12 Hari",
+    "package_code": "PKG-UMTR",
+    "package_type": "Umroh",
+    "passenger_count": 3,
+    "departure_date": "10 Jan 2027",
+    "items": [
+      {
+        "id": "4b39b183-8942-4739-ac8e-d41f7fda007c",
+        "jamaah_id": "da653afb-d39e-4292-923e-1f8c34905e4d",
+        "jamaah_name": "Gunawan Wibowo",
+        "registration_code": "REG-00007",
+        "room_number": "305",
+        "room_type": "Triple",
+        "bus_number": "BUS-1",
+        "seat_number": "12",
+        "mahram_group": "GRUP-C"
+      },
+      {
+        "id": "ae4ba8c0-1d5a-4faa-863e-157bb7bcf5d5",
+        "jamaah_name": "Budi Santoso",
+        "registration_code": "REG-00002",
+        "room_number": "305",
+        "room_type": "Triple",
+        "bus_number": "BUS-1",
+        "seat_number": "13",
+        "mahram_group": "GRUP-C"
+      },
+      {
+        "id": "e8a1476c-6a30-473d-9bda-e02c96861e61",
+        "jamaah_name": "Eko Prasetyo",
+        "registration_code": "REG-00005",
+        "room_number": "305",
+        "room_type": "Triple",
+        "bus_number": "BUS-1",
+        "seat_number": "14",
+        "mahram_group": "GRUP-C"
+      }
+    ]
+  },
+  {
+    "id": "1",
+    "package_id": "e8fefa3d-0d83-441e-99b0-1fc0d5050eb1",
+    "package_name": "Umroh Reguler 9 Hari",
+    "package_code": "PKG-UMRG",
+    "package_type": "Umroh",
+    "passenger_count": 3,
+    "departure_date": "10 Dec 2026",
+    "items": [
+      {
+        "id": "900fc68b-56e2-4957-90fb-d56edb95c37c",
+        "jamaah_id": "d2efbf00-ac12-4272-b0ed-a3d5b1a28e54",
+        "jamaah_name": "Siti Rahmawati",
+        "registration_code": "REG-00010",
+        "room_number": "402",
+        "room_type": "Quad",
+        "bus_number": "BUS-3",
+        "seat_number": "7",
+        "mahram_group": "GRUP-E"
+      },
+      {
+        "id": "a8d70b9a-a60e-4b1b-abae-78e441ecbf60",
+        "jamaah_name": "Citra Lestari",
+        "registration_code": "REG-00003",
+        "room_number": "402",
+        "room_type": "Quad",
+        "bus_number": "BUS-3",
+        "seat_number": "8",
+        "mahram_group": "GRUP-E"
+      },
+      {
+        "id": "968d9896-851b-4177-b7e5-9aac84af1f04",
+        "jamaah_name": "Fitri Handayani",
+        "registration_code": "REG-00006",
+        "room_number": "402",
+        "room_type": "Quad",
+        "bus_number": "BUS-3",
+        "seat_number": "9",
+        "mahram_group": "GRUP-E"
+      }
+    ]
+  }
+]

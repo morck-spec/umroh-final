@@ -1,0 +1,62 @@
+[
+  {
+    "id": "6d97013e-d6bb-4206-a222-5997d5488303",
+    "name": "Al Eiman Royal Hotel",
+    "city": "Madinah",
+    "stars": 4,
+    "distance_m": 300,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  },
+  {
+    "id": "c5311bf7-ed74-46db-9121-690d18e868a9",
+    "name": "Dallah Taibah Hotel",
+    "city": "Madinah",
+    "stars": 4,
+    "distance_m": 150,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  },
+  {
+    "id": "bf807f8d-57d9-418b-b4fc-066e459b2990",
+    "name": "Anjum Hotel Makkah",
+    "city": "Mekah",
+    "stars": 4,
+    "distance_m": 400,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  },
+  {
+    "id": "7924927b-aae2-4073-b213-ee8e2701698c",
+    "name": "Hilton Makkah Convention",
+    "city": "Mekah",
+    "stars": 5,
+    "distance_m": 250,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  },
+  {
+    "id": "3d6ff02e-2be5-4053-a98f-39c65f537d19",
+    "name": "garuda",
+    "city": "Madinah",
+    "stars": 5,
+    "distance_m": 80,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  },
+  {
+    "id": "64584a1c-d430-4670-b0c9-e415b6c99688",
+    "name": "Swissôtel Al Maqam Makkah",
+    "city": "Mekah",
+    "stars": 4,
+    "distance_m": 100,
+    "is_active": true,
+    "description": null,
+    "created_at": "2026-10-14T07:59:02.062137+00:00"
+  }
+]

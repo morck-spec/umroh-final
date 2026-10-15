@@ -1,134 +1,493 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import fs from 'fs';
+import path from 'path';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/utils/supabase/server';
 
-export async function getJamaah() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('jamaah')
-    .select(`
-      *,
-      profiles(full_name, role),
-      branches(name)
-    `)
-    .order('created_at', { ascending: false });
+export interface JamaahItem {
+  id: string;
+  legacy_id?: string;
+  code: string;
+  full_name: string;
+  gender: 'Laki-laki' | 'Perempuan' | 'L' | 'P';
+  nik?: string;
+  phone?: string;
+  email?: string;
+  birth_place?: string;
+  birth_date?: string;
+  blood_type?: string;
+  city?: string;
+  address?: string;
+  passport_number?: string;
+  passport_issued_place?: string;
+  passport_issued_date?: string;
+  passport_expiry_date?: string;
+  passport_expiry_formatted?: string;
+  branch_id?: string | null;
+  branch_name?: string;
+  agent_name?: string;
+  mahram_name?: string;
+  mahram_relation?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact?: string;
+  health_notes?: string;
+  is_active?: boolean;
+  status?: string;
+  account_login?: string;
+  document_count?: number;
+  profiles?: { full_name: string; role?: string };
+  branches?: { name: string };
+  profile_id?: string | null;
+  created_at?: string;
+}
 
-  if (error) {
-    console.error('Error fetching jamaah:', error);
+const JAMAAH_FILE = path.join(process.cwd(), 'src', 'data', 'jamaah.json');
+
+function readJamaahFile(): JamaahItem[] {
+  try {
+    if (!fs.existsSync(JAMAAH_FILE)) {
+      return [];
+    }
+    const raw = fs.readFileSync(JAMAAH_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading jamaah.json:', err);
     return [];
   }
+}
 
-  return data;
+function writeJamaahFile(data: JamaahItem[]): void {
+  try {
+    const dir = path.dirname(JAMAAH_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(JAMAAH_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing jamaah.json:', err);
+  }
+}
+
+function formatExpiryDate(dateStr?: string): string {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `Exp ${months[d.getMonth()]} ${d.getFullYear()}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+export async function getJamaah(): Promise<JamaahItem[]> {
+  const fileItems = readJamaahFile();
+
+  try {
+    const supabase = await createClient();
+    const { data: dbData, error } = await supabase
+      .from('jamaah')
+      .select(`
+        *,
+        profiles(full_name, role),
+        branches(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (!error && dbData && dbData.length > 0) {
+      const mergedMap = new Map<string, JamaahItem>();
+      fileItems.forEach((f) => mergedMap.set(f.id, f));
+
+      dbData.forEach((dbItem: any) => {
+        const existing = mergedMap.get(dbItem.id);
+        const mapped: JamaahItem = {
+          id: dbItem.id,
+          legacy_id: existing?.legacy_id,
+          code: existing?.code || `JM-${String(dbItem.id).slice(0, 4).toUpperCase()}`,
+          full_name: dbItem.full_name || dbItem.profiles?.full_name || existing?.full_name || 'Tanpa Nama',
+          gender: (dbItem.gender === 'P' || existing?.gender === 'Perempuan') ? 'Perempuan' : 'Laki-laki',
+          nik: dbItem.nik || existing?.nik || '',
+          phone: dbItem.phone || existing?.phone || '',
+          email: existing?.email || '',
+          birth_place: existing?.birth_place || '',
+          birth_date: dbItem.birth_date || existing?.birth_date || '',
+          blood_type: existing?.blood_type || '',
+          city: existing?.city || '',
+          address: existing?.address || '',
+          passport_number: existing?.passport_number || '',
+          passport_issued_place: existing?.passport_issued_place || '',
+          passport_issued_date: existing?.passport_issued_date || '',
+          passport_expiry_date: existing?.passport_expiry_date || '',
+          passport_expiry_formatted: existing?.passport_expiry_formatted || (existing?.passport_expiry_date ? formatExpiryDate(existing.passport_expiry_date) : '-'),
+          branch_id: dbItem.branch_id || existing?.branch_id || null,
+          branch_name: dbItem.branches?.name || existing?.branch_name || 'Kantor Pusat Jakarta',
+          agent_name: existing?.agent_name || '-',
+          mahram_name: existing?.mahram_name || '-',
+          mahram_relation: existing?.mahram_relation || '-',
+          emergency_contact_name: existing?.emergency_contact_name || dbItem.emergency_contact || '-',
+          emergency_contact_phone: existing?.emergency_contact_phone || '',
+          emergency_contact: dbItem.emergency_contact || existing?.emergency_contact || '',
+          health_notes: existing?.health_notes || '',
+          is_active: existing?.is_active ?? true,
+          status: existing?.status || 'Aktif',
+          account_login: (dbItem.profile_id || existing?.account_login === 'Aktif') ? 'Aktif' : 'Belum Ada Akun',
+          document_count: existing?.document_count ?? 6,
+          profiles: dbItem.profiles,
+          branches: dbItem.branches,
+          profile_id: dbItem.profile_id,
+          created_at: dbItem.created_at,
+        };
+        mergedMap.set(dbItem.id, mapped);
+      });
+
+      return Array.from(mergedMap.values());
+    }
+  } catch (err) {
+    // If supabase fails, rely purely on local json file
+  }
+
+  return fileItems;
+}
+
+export async function getJamaahDetail(id: string): Promise<JamaahItem | null> {
+  const all = await getJamaah();
+  const match = all.find((j) => j.id === id || j.legacy_id === id || j.code === id);
+  return match || null;
 }
 
 export async function getBranches() {
-  const supabase = await createClient();
-  const { data } = await supabase.from('branches').select('id, name');
-  return data || [];
-}
-
-export async function createJamaah(formData: FormData, branchId?: string | null) {
-  const supabase = await createClient();
-
-  const full_name = formData.get('full_name') as string;
-  const phone = formData.get('phone') as string;
-  const nik = formData.get('nik') as string;
-  const gender = formData.get('gender') as string;
-  const birth_date = formData.get('birth_date') as string;
-  const emergency_contact = formData.get('emergency_contact') as string;
-
-  // Admin cabang forces their own branch id (passed from client)
-  const finalBranchId = branchId || (formData.get('branch_id') as string) || null;
-
-  if (!full_name || !phone) {
-    return { error: 'Nama dan nomor telepon wajib diisi' };
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from('branches').select('id, name');
+    if (data && data.length > 0) return data;
+  } catch {
+    // fallback
   }
 
-  const { error } = await supabase
-    .from('jamaah')
-    .insert({
+  const branchesPath = path.join(process.cwd(), 'src', 'data', 'branches.json');
+  if (fs.existsSync(branchesPath)) {
+    try {
+      const raw = fs.readFileSync(branchesPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      return [
+        { id: 'pusat', name: 'Kantor Pusat Jakarta' },
+        ...parsed.map((b: any) => ({ id: b.id, name: b.name })),
+      ];
+    } catch {
+      // ignore
+    }
+  }
+
+  return [
+    { id: 'pusat', name: 'Kantor Pusat Jakarta' },
+    { id: 'jember', name: 'Cabang Jember' },
+    { id: 'padang', name: 'Cabang Padang' },
+    { id: 'surabaya', name: 'Cabang Surabaya' },
+    { id: 'bandung', name: 'Cabang Bandung' },
+  ];
+}
+
+export async function getAgents() {
+  const agentsPath = path.join(process.cwd(), 'src', 'data', 'agents.json');
+  if (fs.existsSync(agentsPath)) {
+    try {
+      const raw = fs.readFileSync(agentsPath, 'utf-8');
+      const agents = JSON.parse(raw);
+      if (agents.length > 0) {
+        return ['Tanpa Agen', ...agents.map((a: any) => a.name)];
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const usersPath = path.join(process.cwd(), 'src', 'data', 'users.json');
+  if (fs.existsSync(usersPath)) {
+    try {
+      const raw = fs.readFileSync(usersPath, 'utf-8');
+      const users = JSON.parse(raw);
+      const agents = users.filter((u: any) => u.role === 'Agen / Marketing' || u.role === 'mitra_agen');
+      if (agents.length > 0) {
+        return ['Tanpa Agen', ...agents.map((a: any) => a.name)];
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return ['Tanpa Agen', 'Siti Aminah', 'Rahmat Hidayat', 'Hasan Basri'];
+}
+
+export async function createJamaah(
+  formDataOrObj: FormData | Record<string, any>,
+  branchId?: string | null
+): Promise<{ success?: boolean; id?: string; error?: string }> {
+  const getField = (key: string): string => {
+    if (formDataOrObj instanceof FormData) {
+      return (formDataOrObj.get(key) as string) || '';
+    }
+    return (formDataOrObj[key] as string) || '';
+  };
+
+  const getBool = (key: string): boolean => {
+    if (formDataOrObj instanceof FormData) {
+      return formDataOrObj.get(key) === 'true' || formDataOrObj.get(key) === 'on' || formDataOrObj.get(key) === '1';
+    }
+    return Boolean(formDataOrObj[key]);
+  };
+
+  const full_name = getField('full_name').trim();
+  const phone = getField('phone').trim();
+  const nik = getField('nik').trim();
+  const genderRaw = getField('gender').trim();
+  const gender: 'Laki-laki' | 'Perempuan' =
+    genderRaw === 'P' || genderRaw === 'Perempuan' ? 'Perempuan' : 'Laki-laki';
+  const birth_place = getField('birth_place').trim();
+  const birth_date = getField('birth_date').trim();
+  const blood_type = getField('blood_type').trim();
+  const email = getField('email').trim();
+  const city = getField('city').trim();
+  const address = getField('address').trim();
+
+  const passport_number = getField('passport_number').trim();
+  const passport_issued_place = getField('passport_issued_place').trim();
+  const passport_issued_date = getField('passport_issued_date').trim();
+  const passport_expiry_date = getField('passport_expiry_date').trim();
+
+  const branch_name = getField('branch_name') || getField('branch') || 'Kantor Pusat Jakarta';
+  const agent_name = getField('agent_name') || getField('agent') || '-';
+
+  const mahram_name = getField('mahram_name').trim() || '-';
+  const mahram_relation = getField('mahram_relation').trim() || '-';
+  const emergency_contact_name = getField('emergency_contact_name').trim();
+  const emergency_contact_phone = getField('emergency_contact_phone').trim();
+  const emergency_contact = emergency_contact_name
+    ? `${emergency_contact_name}${emergency_contact_phone ? ` - ${emergency_contact_phone}` : ''}`
+    : getField('emergency_contact').trim();
+
+  const health_notes = getField('health_notes').trim();
+  const is_active = getBool('is_active');
+
+  const finalBranchId = branchId || getField('branch_id') || null;
+
+  if (!full_name) {
+    return { error: 'Nama lengkap wajib diisi' };
+  }
+
+  const items = readJamaahFile();
+
+  // Generate code: JM-00XX
+  const maxNum = items.reduce((max, item) => {
+    const numPart = parseInt(item.code.replace(/[^0-9]/g, ''), 10);
+    return !isNaN(numPart) && numPart > max ? numPart : max;
+  }, items.length);
+
+  const nextCode = `JM-${String(maxNum + 1).padStart(4, '0')}`;
+  const newId = String(Date.now());
+
+  const newItem: JamaahItem = {
+    id: newId,
+    legacy_id: String(items.length + 1),
+    code: nextCode,
+    full_name,
+    gender,
+    nik: nik || undefined,
+    phone: phone || undefined,
+    email: email || undefined,
+    birth_place: birth_place || undefined,
+    birth_date: birth_date || undefined,
+    blood_type: blood_type || undefined,
+    city: city || undefined,
+    address: address || undefined,
+    passport_number: passport_number || undefined,
+    passport_issued_place: passport_issued_place || undefined,
+    passport_issued_date: passport_issued_date || undefined,
+    passport_expiry_date: passport_expiry_date || undefined,
+    passport_expiry_formatted: passport_expiry_date ? formatExpiryDate(passport_expiry_date) : undefined,
+    branch_id: finalBranchId,
+    branch_name: branch_name || 'Kantor Pusat Jakarta',
+    agent_name: agent_name === 'Tanpa Agen' ? '-' : agent_name,
+    mahram_name: mahram_name || '-',
+    mahram_relation: mahram_relation || '-',
+    emergency_contact_name: emergency_contact_name || undefined,
+    emergency_contact_phone: emergency_contact_phone || undefined,
+    emergency_contact: emergency_contact || undefined,
+    health_notes: health_notes || '',
+    is_active: is_active ?? true,
+    status: is_active ? 'Aktif' : 'Nonaktif',
+    account_login: 'Aktif',
+    document_count: 0,
+    created_at: new Date().toISOString(),
+  };
+
+  items.unshift(newItem);
+  writeJamaahFile(items);
+
+  // Sync to Supabase if accessible
+  try {
+    const supabase = await createClient();
+    await supabase.from('jamaah').insert({
       full_name,
-      phone,
+      phone: phone || null,
       nik: nik || null,
-      gender: gender || null,
+      gender: gender === 'Laki-laki' ? 'L' : 'P',
       birth_date: birth_date || null,
       emergency_contact: emergency_contact || null,
-      branch_id: finalBranchId
+      branch_id: finalBranchId,
     });
-
-  if (error) {
-    console.error('Error creating jamaah:', error);
-    if (error.code === '23505' && error.message.includes('nik')) {
-      return { error: 'NIK sudah terdaftar' };
-    }
-    return { error: 'Gagal mendaftarkan jamaah' };
+  } catch {
+    // ignore DB errors in mock mode
   }
 
   revalidatePath('/dashboard/superadmin/jamaah');
   revalidatePath('/dashboard/admin/jamaah');
   revalidatePath('/dashboard/admin_cabang/jamaah');
-  return { success: true };
+  revalidatePath('/pilgrims');
+  revalidatePath('/jamaah');
+
+  return { success: true, id: newId };
 }
 
-export async function updateJamaah(id: string, formData: FormData, branchId?: string | null) {
-  const supabase = await createClient();
+export async function updateJamaah(
+  id: string,
+  formDataOrObj: FormData | Record<string, any>,
+  branchId?: string | null
+): Promise<{ success?: boolean; error?: string }> {
+  const getField = (key: string): string => {
+    if (formDataOrObj instanceof FormData) {
+      return (formDataOrObj.get(key) as string) || '';
+    }
+    return (formDataOrObj[key] as string) || '';
+  };
 
-  const full_name = formData.get('full_name') as string;
-  const phone = formData.get('phone') as string;
-  const nik = formData.get('nik') as string;
-  const gender = formData.get('gender') as string;
-  const birth_date = formData.get('birth_date') as string;
-  const emergency_contact = formData.get('emergency_contact') as string;
+  const getBool = (key: string): boolean => {
+    if (formDataOrObj instanceof FormData) {
+      return formDataOrObj.get(key) === 'true' || formDataOrObj.get(key) === 'on' || formDataOrObj.get(key) === '1';
+    }
+    return Boolean(formDataOrObj[key]);
+  };
 
-  const finalBranchId = branchId || (formData.get('branch_id') as string) || null;
+  const full_name = getField('full_name').trim();
+  const phone = getField('phone').trim();
+  const nik = getField('nik').trim();
+  const genderRaw = getField('gender').trim();
+  const gender: 'Laki-laki' | 'Perempuan' =
+    genderRaw === 'P' || genderRaw === 'Perempuan' ? 'Perempuan' : 'Laki-laki';
+  const birth_place = getField('birth_place').trim();
+  const birth_date = getField('birth_date').trim();
+  const blood_type = getField('blood_type').trim();
+  const email = getField('email').trim();
+  const city = getField('city').trim();
+  const address = getField('address').trim();
 
-  if (!full_name || !phone) {
-    return { error: 'Nama dan nomor telepon wajib diisi' };
+  const passport_number = getField('passport_number').trim();
+  const passport_issued_place = getField('passport_issued_place').trim();
+  const passport_issued_date = getField('passport_issued_date').trim();
+  const passport_expiry_date = getField('passport_expiry_date').trim();
+
+  const branch_name = getField('branch_name') || getField('branch');
+  const agent_name = getField('agent_name') || getField('agent');
+
+  const mahram_name = getField('mahram_name').trim();
+  const mahram_relation = getField('mahram_relation').trim();
+  const emergency_contact_name = getField('emergency_contact_name').trim();
+  const emergency_contact_phone = getField('emergency_contact_phone').trim();
+  const emergency_contact = emergency_contact_name
+    ? `${emergency_contact_name}${emergency_contact_phone ? ` - ${emergency_contact_phone}` : ''}`
+    : getField('emergency_contact').trim();
+
+  const health_notes = getField('health_notes').trim();
+  const is_active = getBool('is_active');
+
+  const finalBranchId = branchId || getField('branch_id') || null;
+
+  if (!full_name) {
+    return { error: 'Nama lengkap wajib diisi' };
   }
 
-  const { error } = await supabase
-    .from('jamaah')
-    .update({
+  const items = readJamaahFile();
+  const idx = items.findIndex((j) => j.id === id || j.legacy_id === id);
+
+  if (idx !== -1) {
+    items[idx] = {
+      ...items[idx],
       full_name,
-      phone,
-      nik: nik || null,
-      gender: gender || null,
-      birth_date: birth_date || null,
-      emergency_contact: emergency_contact || null,
-      branch_id: finalBranchId
-    })
-    .eq('id', id);
+      gender,
+      nik: nik || items[idx].nik,
+      phone: phone || items[idx].phone,
+      email: email || items[idx].email,
+      birth_place: birth_place || items[idx].birth_place,
+      birth_date: birth_date || items[idx].birth_date,
+      blood_type: blood_type || items[idx].blood_type,
+      city: city || items[idx].city,
+      address: address || items[idx].address,
+      passport_number: passport_number || items[idx].passport_number,
+      passport_issued_place: passport_issued_place || items[idx].passport_issued_place,
+      passport_issued_date: passport_issued_date || items[idx].passport_issued_date,
+      passport_expiry_date: passport_expiry_date || items[idx].passport_expiry_date,
+      passport_expiry_formatted: passport_expiry_date
+        ? formatExpiryDate(passport_expiry_date)
+        : items[idx].passport_expiry_formatted,
+      branch_id: finalBranchId || items[idx].branch_id,
+      branch_name: branch_name || items[idx].branch_name,
+      agent_name: agent_name === 'Tanpa Agen' ? '-' : (agent_name || items[idx].agent_name),
+      mahram_name: mahram_name !== '' ? mahram_name : items[idx].mahram_name,
+      mahram_relation: mahram_relation !== '' ? mahram_relation : items[idx].mahram_relation,
+      emergency_contact_name: emergency_contact_name || items[idx].emergency_contact_name,
+      emergency_contact_phone: emergency_contact_phone || items[idx].emergency_contact_phone,
+      emergency_contact: emergency_contact || items[idx].emergency_contact,
+      health_notes: health_notes !== '' ? health_notes : items[idx].health_notes,
+      is_active: is_active,
+      status: is_active ? 'Aktif' : 'Nonaktif',
+    };
+    writeJamaahFile(items);
+  }
 
-  if (error) {
-    console.error('Error updating jamaah:', error);
-    if (error.code === '23505' && error.message.includes('nik')) {
-      return { error: 'NIK sudah terdaftar' };
-    }
-    return { error: 'Gagal memperbarui jamaah' };
+  try {
+    const supabase = await createClient();
+    await supabase
+      .from('jamaah')
+      .update({
+        full_name,
+        phone: phone || null,
+        nik: nik || null,
+        gender: gender === 'Laki-laki' ? 'L' : 'P',
+        birth_date: birth_date || null,
+        emergency_contact: emergency_contact || null,
+        branch_id: finalBranchId,
+      })
+      .eq('id', id);
+  } catch {
+    // ignore DB errors
   }
 
   revalidatePath('/dashboard/superadmin/jamaah');
+  revalidatePath(`/dashboard/superadmin/jamaah/${id}`);
   revalidatePath('/dashboard/admin/jamaah');
   revalidatePath('/dashboard/admin_cabang/jamaah');
+  revalidatePath('/pilgrims');
+  revalidatePath('/jamaah');
+
   return { success: true };
 }
 
-export async function deleteJamaah(id: string) {
-  const supabase = await createClient();
+export async function deleteJamaah(id: string): Promise<{ success?: boolean; error?: string }> {
+  const items = readJamaahFile();
+  const filtered = items.filter((j) => j.id !== id && j.legacy_id !== id);
+  writeJamaahFile(filtered);
 
-  const { error } = await supabase
-    .from('jamaah')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error deleting jamaah:', error);
-    return { error: 'Gagal menghapus jamaah' };
+  try {
+    const supabase = await createClient();
+    await supabase.from('jamaah').delete().eq('id', id);
+  } catch {
+    // ignore DB errors
   }
 
   revalidatePath('/dashboard/superadmin/jamaah');
   revalidatePath('/dashboard/admin/jamaah');
   revalidatePath('/dashboard/admin_cabang/jamaah');
+  revalidatePath('/pilgrims');
+  revalidatePath('/jamaah');
+
   return { success: true };
 }

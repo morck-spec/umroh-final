@@ -1,95 +1,134 @@
 'use client';
 
 import { useState } from 'react';
-import { verifyDocument, getSignedUrl } from '@/app/dashboard/shared/actions/documents';
-import { FileText, Check, X, Eye } from 'lucide-react';
+import Link from 'next/link';
+import { PilgrimWithDocs } from '@/app/dashboard/shared/actions/documents';
 
-export default function DocumentsClient({ initialDocuments }: { initialDocuments: any[] }) {
-  const [documents, setDocuments] = useState(initialDocuments);
-  const [isLoading, setIsLoading] = useState(false);
+interface DocumentsClientProps {
+  initialPilgrims: PilgrimWithDocs[];
+  basePath?: string;
+}
 
-  async function handleVerify(id: string, status: string) {
-    let reason = '';
-    if (status === 'rejected') {
-      const input = prompt('Alasan penolakan dokumen:');
-      if (input === null) return;
-      reason = input;
-    }
+export default function DocumentsClient({ initialPilgrims, basePath = '/dashboard/superadmin/documents' }: DocumentsClientProps) {
+  const [pilgrims, setPilgrims] = useState<PilgrimWithDocs[]>(initialPilgrims);
+  const [search, setSearch] = useState('');
 
-    setIsLoading(true);
-    try {
-      const res = await verifyDocument(id, status, reason);
-      if (res?.error) alert(res.error);
-      else window.location.reload();
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleView(filePath: string) {
-    const url = await getSignedUrl(filePath);
-    if (url) window.open(url, '_blank');
-    else alert('Gagal membuka dokumen. Pastikan bucket "documents" tersedia dan Anda memiliki akses.');
-  }
+  const filtered = pilgrims.filter((p) => {
+    if (!search) return true;
+    const lower = search.toLowerCase();
+    return p.name.toLowerCase().includes(lower) || p.code.toLowerCase().includes(lower);
+  });
 
   return (
     <div>
-      <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
-        <h3 className="text-lg font-semibold text-slate-800">Verifikasi Dokumen Jamaah</h3>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
+        <Link href="/dashboard/superadmin" className="hover:text-slate-600 transition-colors">
+          Beranda
+        </Link>
+        <span>&rsaquo;</span>
+        <span className="text-slate-600 font-medium">Dokumen</span>
+      </nav>
+
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Dokumen Jamaah</h1>
+        <p className="text-xs text-slate-500 mt-1">Kelengkapan &amp; verifikasi dokumen per jamaah</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tgl Upload</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Jamaah</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Jenis Dokumen</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-200">
-            {documents.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">Belum ada dokumen yang diunggah.</td></tr>
-            ) : (
-              documents.map((doc) => (
-                <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {new Date(doc.created_at).toLocaleDateString('id-ID')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900">{doc.jamaah?.full_name}</div>
-                    <div className="text-xs text-slate-500">{doc.jamaah?.nik}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {doc.document_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${doc.status === 'valid' ? 'bg-emerald-100 text-emerald-800' :
-                        doc.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-amber-100 text-amber-800'}`}>
-                      {doc.status}
-                    </span>
-                    {doc.rejection_reason && <div className="text-xs text-red-500 mt-1 max-w-xs truncate" title={doc.rejection_reason}>Alasan: {doc.rejection_reason}</div>}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <button onClick={() => handleView(doc.file_url)} className="text-blue-600 hover:text-blue-900 p-1 bg-blue-50 rounded" title="Lihat Dokumen"><Eye className="w-4 h-4" /></button>
-                    {doc.status === 'pending' && (
-                      <>
-                        <button disabled={isLoading} onClick={() => handleVerify(doc.id, 'valid')} className="text-emerald-600 hover:text-emerald-900 p-1 bg-emerald-50 rounded" title="Valid"><Check className="w-4 h-4" /></button>
-                        <button disabled={isLoading} onClick={() => handleVerify(doc.id, 'rejected')} className="text-orange-600 hover:text-orange-900 p-1 bg-orange-50 rounded" title="Tolak"><X className="w-4 h-4" /></button>
-                      </>
-                    )}
+      {/* Main Table Card */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        {/* Search Bar */}
+        <div className="flex flex-wrap items-center gap-3 p-4 border-b border-slate-100 bg-white">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama jamaah..."
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]"
+            />
+          </div>
+          <button
+            type="button"
+            className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium text-slate-700 transition-colors"
+          >
+            Cari
+          </button>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-3.5">JAMAAH</th>
+                <th className="px-5 py-3.5">CABANG</th>
+                <th className="px-5 py-3.5">KELENGKAPAN</th>
+                <th className="px-5 py-3.5">STATUS</th>
+                <th className="px-5 py-3.5 text-right">AKSI</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-slate-400 text-sm">
+                    Belum ada jamaah yang terdaftar.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filtered.map((p) => {
+                  const verified = p.verified_count ?? 0;
+                  const total = p.total_count ?? 6;
+                  const pct = total > 0 ? (verified / total) * 100 : 0;
+
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-4 font-medium text-slate-800">{p.name}</td>
+                      <td className="px-5 py-4 text-slate-600">{p.branch || 'Kantor Pusat Jakarta'}</td>
+                      <td className="px-5 py-4 w-56">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-[#0D9488] h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-500 font-mono shrink-0">
+                            {verified}/{total}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        {total === 0 ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                            Belum ada
+                          </span>
+                        ) : verified >= total ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E7F6EC] text-[#16A34A]">
+                            Lengkap
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#FEF3C7] text-[#D97706]">
+                            Proses
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                        <Link
+                          href={`${basePath}/${p.id}`}
+                          className="text-[#0D9488] hover:underline font-medium text-sm"
+                        >
+                          Kelola
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

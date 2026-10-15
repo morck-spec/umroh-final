@@ -29,17 +29,24 @@ export async function login(formData: FormData) {
       .eq('id', data.user.id)
       .single()
 
-    if (profile?.role) {
-      role = profile.role
+    role = data.user.user_metadata?.role || profile?.role || 'jamaah';
+    if (profile?.role && ['super_admin', 'admin', 'admin_cabang'].includes(profile.role)) {
+      role = profile.role;
     }
   }
 
   revalidatePath('/', 'layout')
 
-  if (role === 'superadmin') {
+  if (role === 'super_admin' || role === 'superadmin') {
     redirect('/dashboard/superadmin')
   } else if (role === 'admin') {
     redirect('/dashboard/admin')
+  } else if (role === 'admin_cabang') {
+    redirect('/dashboard/admin_cabang')
+  } else if (role === 'mitra_agen') {
+    redirect('/dashboard/mitra')
+  } else if (role === 'muthawif' || role === 'guide') {
+    redirect('/dashboard/muthawif')
   } else {
     redirect('/dashboard/jamaah')
   }

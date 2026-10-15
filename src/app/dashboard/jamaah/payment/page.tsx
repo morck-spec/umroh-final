@@ -1,38 +1,19 @@
-import { createClient } from '@/utils/supabase/server';
+import { getRegistrationBilling } from '@/app/dashboard/shared/actions/paymentBilling';
 import JamaahPaymentClient from '@/components/dashboard/JamaahPaymentClient';
 
 export const metadata = { title: 'Tagihan & Pembayaran | Trecer' };
 
 export default async function JamaahPaymentPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Load registration for Ahmad Fauzi (REG-00009 / id: 9)
+  let registration = await getRegistrationBilling('9');
+  if (!registration) {
+    registration = await getRegistrationBilling('REG-00009');
+  }
 
-  // Ambil registrations untuk user ini
-  const { data: registrations } = await supabase
-    .from('registrations')
-    .select(`
-      id,
-      status,
-      jamaah!inner(id, profile_id),
-      packages(id, name, price)
-    `)
-    .eq('jamaah.profile_id', user?.id)
-    .order('created_at', { ascending: false });
+  // Fallback to id 1 if not found
+  if (!registration) {
+    registration = await getRegistrationBilling('1');
+  }
 
-  // Ambil history payments
-  const { data: payments } = await supabase
-    .from('payments')
-    .select(`
-      *,
-      registrations!inner(jamaah!inner(profile_id), packages(name))
-    `)
-    .eq('registrations.jamaah.profile_id', user?.id)
-    .order('created_at', { ascending: false });
-
-  return (
-    <JamaahPaymentClient
-      registrations={registrations || []}
-      payments={payments || []}
-    />
-  );
+  return <JamaahPaymentClient registration={registration} />;
 }

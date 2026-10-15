@@ -1,0 +1,92 @@
+[
+  {
+    "id": "log-1",
+    "created_at": "2026-10-14T16:41:00Z",
+    "time_formatted": "14 Oct 2026 16:41",
+    "user_name": "Super Admin",
+    "action": "updated",
+    "description": "Memperbarui pengaturan white-label",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-2",
+    "created_at": "2026-10-14T16:27:00Z",
+    "time_formatted": "14 Oct 2026 16:27",
+    "user_name": "Admin Cabang",
+    "action": "updated",
+    "description": "Mereset kata sandi pengguna Lukman Hakim",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-3",
+    "created_at": "2026-10-14T16:25:00Z",
+    "time_formatted": "14 Oct 2026 16:25",
+    "user_name": "Admin Cabang",
+    "action": "updated",
+    "description": "Mereset kata sandi pengguna Siti Aminah",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-4",
+    "created_at": "2026-10-14T16:25:00Z",
+    "time_formatted": "14 Oct 2026 16:25",
+    "user_name": "Admin Cabang",
+    "action": "updated",
+    "description": "Mereset kata sandi pengguna Fitri Handayani",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-5",
+    "created_at": "2026-10-06T08:22:00Z",
+    "time_formatted": "06 Oct 2026 08:22",
+    "user_name": "Super Admin",
+    "action": "updated",
+    "description": "Memperbarui pengguna Indra Kusuma",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-6",
+    "created_at": "2026-10-06T08:21:00Z",
+    "time_formatted": "06 Oct 2026 08:21",
+    "user_name": "Ahmad Fauzi",
+    "action": "printed",
+    "description": "Cetak kwitansi REG-00001-DP",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-7",
+    "created_at": "2026-10-06T04:42:00Z",
+    "time_formatted": "06 Oct 2026 04:42",
+    "user_name": "Admin Cabang",
+    "action": "updated",
+    "description": "Mencatat pembayaran REG-00008-C3",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-8",
+    "created_at": "2026-10-06T04:42:00Z",
+    "time_formatted": "06 Oct 2026 04:42",
+    "user_name": "Admin Cabang",
+    "action": "generated",
+    "description": "Membuat tagihan massal paket Haji Khusus 2026 (0 jamaah)",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-9",
+    "created_at": "2026-10-06T04:20:00Z",
+    "time_formatted": "06 Oct 2026 04:20",
+    "user_name": "Super Admin",
+    "action": "updated",
+    "description": "Memperbarui pengguna Admin Cabang",
+    "ip_address": "127.0.0.1"
+  },
+  {
+    "id": "log-10",
+    "created_at": "2026-10-05T13:54:00Z",
+    "time_formatted": "05 Oct 2026 13:54",
+    "user_name": "Super Admin",
+    "action": "updated",
+    "description": "Memperbarui pengguna Ahmad Fauzi",
+    "ip_address": "127.0.0.1"
+  }
+]

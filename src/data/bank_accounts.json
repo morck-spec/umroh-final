@@ -1,0 +1,24 @@
+[
+  {
+    "id": "6a56aa2a-a28e-431f-8d2c-2ea266f38020",
+    "bank_name": "Bank Muamalat",
+    "account_number": "8009876543",
+    "account_holder": "PT Travel Umroh Haji",
+    "branch_name": "Kantor Pusat Jakarta",
+    "branch_id": null,
+    "branch_office": null,
+    "is_active": true,
+    "created_at": "2026-10-14T08:19:33.503603+00:00"
+  },
+  {
+    "id": "fae4dc2c-b9e1-48dd-8b5c-8a4643c11947",
+    "bank_name": "Bank Syariah Indonesia",
+    "account_number": "7001234567",
+    "account_holder": "PT Travel Umroh Haji",
+    "branch_name": "Kantor Pusat Jakarta",
+    "branch_id": null,
+    "branch_office": null,
+    "is_active": true,
+    "created_at": "2026-10-14T08:19:33.503603+00:00"
+  }
+]

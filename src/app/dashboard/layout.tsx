@@ -1,16 +1,15 @@
-import Link from "next/link";
 import { ReactNode } from "react";
-import { signout } from "@/app/(auth)/actions";
 import { createClient } from "@/utils/supabase/server";
-import { LayoutDashboard, Users, UserPlus, Package, FileText, CreditCard, PieChart, Settings, LogOut, Briefcase } from "lucide-react";
-import MobileSidebar from "@/components/dashboard/MobileSidebar";
 import DesktopSidebar from "@/components/dashboard/DesktopSidebar";
+import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
+import { getWhiteLabelSettings } from "@/app/dashboard/shared/actions/whitelabel";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
 
   let user = null;
-  let role = 'jamaah';
+  let role = 'super_admin';
+  let userName = 'Demo Super Admin';
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     try {
@@ -19,102 +18,64 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, full_name')
           .eq('id', user.id)
           .single();
-        role = profile?.role || user.user_metadata?.role || 'jamaah';
+        let detectedRole = user.user_metadata?.role || profile?.role || 'jamaah';
+        if (user.email === 'mitra@demo.com' || user.email?.startsWith('mitra')) {
+          detectedRole = 'mitra_agen';
+        } else if (user.email === 'muthawif@demo.com' || user.email?.startsWith('muthawif')) {
+          detectedRole = 'muthawif';
+        } else if (user.email === 'jamaah@example.com' || user.email?.includes('jamaah')) {
+          detectedRole = 'jamaah';
+        } else if (profile?.role && ['super_admin', 'admin', 'admin_cabang'].includes(profile.role)) {
+          detectedRole = profile.role;
+        }
+        role = detectedRole;
+        userName = user.user_metadata?.name || profile?.full_name || (detectedRole === 'jamaah' ? 'Ahmad Fauzi' : detectedRole === 'mitra_agen' ? 'Hasan Basri' : detectedRole === 'muthawif' ? 'Ustadz Abdullah' : 'Pengguna Al-Madinah');
       }
     } catch {
+      // Keep defaults
     }
   }
 
-  const userName = user?.user_metadata?.name || 'Demo User';
-  const initial = userName.charAt(0).toUpperCase();
-
-  // Define menus based on role
-  const menus = {
-    super_admin: [
-      { name: 'Dashboard', href: '/dashboard/superadmin', icon: 'LayoutDashboard' },
-      { name: 'Data Cabang', href: '/dashboard/superadmin/branches', icon: 'Briefcase' },
-      { name: 'Data Jamaah', href: '/dashboard/superadmin/jamaah', icon: 'Users' },
-      { name: 'Paket Umroh', href: '/dashboard/superadmin/packages', icon: 'Package' },
-      { name: 'Pembimbing/Muthawif', href: '/dashboard/superadmin/guides', icon: 'UserPlus' },
-      { name: 'Pendaftaran', href: '/dashboard/superadmin/registrations', icon: 'FileText' },
-      { name: 'Dokumen Jamaah', href: '/dashboard/superadmin/documents', icon: 'FileText' },
-      { name: 'Pembayaran & Tagihan', href: '/dashboard/superadmin/payments', icon: 'CreditCard' },
-      { name: 'Jadwal Keberangkatan', href: '/dashboard/superadmin/schedules', icon: 'LayoutDashboard' },
-      { name: 'Manajemen Pengguna', href: '/dashboard/superadmin/users', icon: 'Settings' },
-      { name: 'Laporan Keuangan', href: '/dashboard/superadmin/reports', icon: 'PieChart' },
-    ],
-    admin_cabang: [
-      { name: 'Dashboard Cabang', href: '/dashboard/admin_cabang', icon: 'LayoutDashboard' },
-      { name: 'Jamaah Cabang', href: '/dashboard/admin_cabang/jamaah', icon: 'Users' },
-      { name: 'Pendaftaran', href: '/dashboard/admin_cabang/registrations', icon: 'FileText' },
-      { name: 'Dokumen Jamaah', href: '/dashboard/admin_cabang/documents', icon: 'FileText' },
-      { name: 'Pembayaran', href: '/dashboard/admin_cabang/payments', icon: 'CreditCard' },
-      { name: 'Laporan Cabang', href: '/dashboard/admin_cabang/reports', icon: 'PieChart' },
-    ],
-    admin: [
-      { name: 'Dashboard', href: '/dashboard/admin', icon: 'LayoutDashboard' },
-      { name: 'Data Jamaah', href: '/dashboard/admin/jamaah', icon: 'Users' },
-      { name: 'Paket Umroh', href: '/dashboard/admin/packages', icon: 'Package' },
-      { name: 'Pembimbing/Muthawif', href: '/dashboard/admin/guides', icon: 'UserPlus' },
-      { name: 'Pendaftaran', href: '/dashboard/admin/registrations', icon: 'FileText' },
-      { name: 'Dokumen Jamaah', href: '/dashboard/admin/documents', icon: 'FileText' },
-      { name: 'Pembayaran', href: '/dashboard/admin/payments', icon: 'CreditCard' },
-      { name: 'Jadwal Keberangkatan', href: '/dashboard/admin/schedules', icon: 'LayoutDashboard' },
-      { name: 'Laporan', href: '/dashboard/admin/reports', icon: 'PieChart' },
-    ],
-    jamaah: [
-      { name: 'Portal Jamaah', href: '/dashboard/jamaah', icon: 'LayoutDashboard' },
-      { name: 'Perjalanan Saya', href: '/dashboard/jamaah/journey', icon: 'Package' },
-      { name: 'Dokumen Saya', href: '/dashboard/jamaah/documents', icon: 'FileText' },
-      { name: 'Tagihan & Pembayaran', href: '/dashboard/jamaah/payment', icon: 'CreditCard' },
-      { name: 'Profil & Pengaturan', href: '/dashboard/jamaah/profile', icon: 'Settings' },
-    ]
-  };
-
-  const currentMenu = menus[role as keyof typeof menus] || menus.jamaah;
+  const initial = (userName.charAt(0) || 'U').toUpperCase();
+  const brand = await getWhiteLabelSettings();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - Desktop */}
-      <DesktopSidebar menus={currentMenu} role={role} userName={userName} initial={initial} />
+    <div className="min-h-screen bg-[#F4F6F8] flex flex-col md:flex-row">
+      {/* Dynamic Brand CSS Variables */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --brand-primary: ${brand.primary_color || '#00d4b2'};
+              --brand-secondary: ${brand.secondary_color || '#126259'};
+              --brand-primary-light: ${brand.primary_color ? brand.primary_color + '1a' : '#E3F2EF'};
+            }
+          `,
+        }}
+      />
 
-      {/* Main Content */}
-      <div className="md:pl-64 flex flex-col flex-1">
+      {/* Sidebar - Desktop */}
+      <DesktopSidebar role={role} userName={userName} initial={initial} brand={brand} />
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Top Header */}
-        <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-slate-200">
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex flex-1 items-center">
-              <MobileSidebar menus={currentMenu} role={role} userName={userName} initial={initial} />
-              {/* Optional Search / Breadcrumbs */}
-              <div className="hidden sm:flex items-center text-sm text-slate-500 font-medium">
-                Portal Manajemen Administrasi
-              </div>
-            </div>
-            <div className="ml-4 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700 hidden sm:block">Halo, {userName}</span>
-              </div>
-              <div className="h-4 w-px bg-slate-300"></div>
-              <form action={signout}>
-                <button type="submit" className="flex items-center text-sm text-slate-600 hover:text-red-600 font-medium transition-colors">
-                  <LogOut className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Keluar</span>
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
+        <DashboardTopbar role={role} userName={userName} initial={initial} />
 
         <main className="flex-1">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
-            </div>
+          <div className="px-4 sm:px-6 py-6">
+            {children}
           </div>
         </main>
+
+        {/* Global White-label Footer */}
+        <footer className="py-6 text-center text-xs text-slate-400">
+          <div>{brand.footer_text || '© 2026 Travel Umroh & Haji — Sistem Manajemen Umroh & Haji.'}</div>
+          <div className="text-[11px] mt-0.5">© 2026 <span className="text-[#00c5a0] font-medium">Toko Source Code</span></div>
+        </footer>
       </div>
     </div>
   );

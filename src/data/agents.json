@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ag-1",
+    "code": "AG-DEMO1",
+    "name": "Hasan Basri",
+    "phone": "081234560000",
+    "email": "agent@example.com",
+    "commission_rate": 7.5,
+    "branch": "Kantor Pusat Jakarta",
+    "address": "Jl. Sudirman No. 45, Jakarta Pusat",
+    "is_active": true,
+    "status": "Aktif",
+    "has_account": true,
+    "created_at": "2026-10-14T10:00:00.000Z",
+    "updated_at": "2026-10-14T10:00:00.000Z"
+  },
+  {
+    "id": "ag-2",
+    "code": "AG-DEMO3",
+    "name": "Rahmat Hidayat",
+    "phone": "081234560002",
+    "email": "agent3@example.com",
+    "commission_rate": 6.0,
+    "branch": "Kantor Pusat Jakarta",
+    "address": "Jl. Gatot Subroto No. 12, Jakarta Selatan",
+    "is_active": true,
+    "status": "Aktif",
+    "has_account": false,
+    "created_at": "2026-10-14T11:00:00.000Z",
+    "updated_at": "2026-10-14T11:00:00.000Z"
+  },
+  {
+    "id": "ag-3",
+    "code": "AG-DEMO2",
+    "name": "Siti Aminah",
+    "phone": "081234560001",
+    "email": "agent2@example.com",
+    "commission_rate": 5.0,
+    "branch": "Kantor Pusat Jakarta",
+    "address": "Jl. Melati No. 8, Jakarta Barat",
+    "is_active": true,
+    "status": "Aktif",
+    "has_account": true,
+    "created_at": "2026-10-14T12:00:00.000Z",
+    "updated_at": "2026-10-14T12:00:00.000Z"
+  }
+]

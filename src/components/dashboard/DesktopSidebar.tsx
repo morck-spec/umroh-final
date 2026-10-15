@@ -1,81 +1,152 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, LayoutDashboard, Users, UserPlus, Package, FileText, CreditCard, PieChart, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { signout } from '@/app/(auth)/actions';
+import { getNavGroups, isNavActive } from './navConfig';
 
-const icons = {
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  Package,
-  FileText,
-  CreditCard,
-  PieChart,
-  Settings,
-  Briefcase
-};
+export interface BrandData {
+  app_name: string;
+  subtitle: string;
+  primary_color: string;
+  logo_url?: string;
+}
 
-export default function DesktopSidebar({ menus, role, userName, initial }: { menus: any[], role: string, userName: string, initial: string }) {
-  const pathname = usePathname();
+function getBrandInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter((w) => /^[a-zA-Z0-9]/.test(w));
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return (name.slice(0, 2) || 'TU').toUpperCase();
+}
+
+export function SidebarBrand({ initialBrand }: { initialBrand?: BrandData }) {
+  const [brand, setBrand] = useState<BrandData>(
+    initialBrand || {
+      app_name: 'Travel Umroh & Haji',
+      subtitle: 'Sistem Manajemen Umroh & Haji',
+      primary_color: '#00d4b2',
+      logo_url: '',
+    }
+  );
+
+  useEffect(() => {
+    function handleUpdate(e: Event) {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setBrand({
+          app_name: customEvent.detail.app_name,
+          subtitle: customEvent.detail.subtitle,
+          primary_color: customEvent.detail.primary_color,
+          logo_url: customEvent.detail.logo_url,
+        });
+      }
+    }
+    window.addEventListener('brand-updated', handleUpdate);
+    return () => window.removeEventListener('brand-updated', handleUpdate);
+  }, []);
+
+  const initials = getBrandInitials(brand.app_name);
 
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-      <div className="flex-1 flex flex-col min-h-0 bg-slate-900 border-r border-slate-800 text-white">
-        <div className="flex items-center h-16 flex-shrink-0 px-4 bg-slate-950 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center">
-              <Briefcase className="text-white w-5 h-5" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">Trecer</span>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="px-4 py-4 border-b border-slate-800">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Menu Utama</p>
-          </div>
-          <nav className="flex-1 px-2 py-4 space-y-1">
-            {menus.map((item) => {
-              const Icon = icons[item.icon as keyof typeof icons] || LayoutDashboard;
-              const isActive = pathname === item.href || (pathname.startsWith(item.href) && item.href !== `/dashboard/${role.replace('_', '')}`);
-              // Note: the active state logic might be tricky for root dashboard, so we match exact for root, startsWith for others
-              const isTrulyActive = item.href === pathname || (item.href !== `/dashboard/${role === 'admin_cabang' ? 'admin_cabang' : role === 'super_admin' ? 'superadmin' : role}` && pathname.startsWith(item.href));
+    <Link href="/" className="flex items-center gap-2.5 min-w-0">
+      <div
+        className="w-9 h-9 rounded-lg text-white flex items-center justify-center text-sm font-bold flex-shrink-0 transition-colors shadow-xs overflow-hidden"
+        style={{ backgroundColor: brand.primary_color || 'var(--brand-primary, #00d4b2)' }}
+      >
+        {brand.logo_url ? (
+          <img src={brand.logo_url} alt={brand.app_name} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
+      <div className="leading-tight min-w-0">
+        <span className="block text-[13px] font-semibold text-slate-800 whitespace-nowrap truncate">{brand.app_name}</span>
+        <span className="block text-[10px] text-slate-400 whitespace-nowrap truncate">{brand.subtitle}</span>
+      </div>
+    </Link>
+  );
+}
 
+export function SidebarNav({ role, onNavigate }: { role: string; onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const effectiveRole =
+    pathname?.includes('/dashboard/jamaah') || pathname?.startsWith('/dashboard/jamaah')
+      ? 'jamaah'
+      : pathname?.includes('/dashboard/mitra')
+      ? 'mitra_agen'
+      : pathname?.includes('/dashboard/muthawif') || pathname?.startsWith('/dashboard/muthawif') || pathname?.includes('/pilgrims')
+      ? 'muthawif'
+      : pathname?.includes('/dashboard/admin_cabang')
+      ? 'admin_cabang'
+      : pathname?.includes('/dashboard/admin')
+      ? 'admin'
+      : role;
+
+  const groups = getNavGroups(effectiveRole);
+
+  return (
+    <nav className="flex-1 px-2 py-3">
+      {groups.map((group, gIdx) => (
+        <div key={gIdx} className={gIdx > 0 ? 'mt-4' : ''}>
+          {group.title && (
+            <p className="px-2 mb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{group.title}</p>
+          )}
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const active = isNavActive(pathname, item.href);
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isTrulyActive
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  onClick={onNavigate}
+                  suppressHydrationWarning
+                  style={active ? { backgroundColor: 'var(--brand-primary-light, #E3F2EF)' } : undefined}
+                  className={`flex items-center gap-3 px-2 py-2 rounded-md text-[13px] transition-colors ${
+                    active ? 'text-[#008f6b] font-medium' : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${isTrulyActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'}`} />
-                  {item.name}
+                  <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-[#00c292]' : 'text-slate-600'}`} strokeWidth={1.6} />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
-          </nav>
+          </div>
         </div>
-        <div className="flex-shrink-0 flex border-t border-slate-800 p-4">
-          <Link href={`/dashboard/${role === 'admin_cabang' ? 'admin_cabang' : role === 'super_admin' ? 'superadmin' : role}/profile`} className="flex-shrink-0 w-full group block">
-            <div className="flex items-center">
-              <div>
-                <div className="inline-block h-9 w-9 rounded-full bg-slate-800 text-emerald-400 flex items-center justify-center font-bold">
-                  {initial}
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-white">{userName}</p>
-                <p className="text-xs font-medium text-slate-400 group-hover:text-slate-300 capitalize">
-                  Role: {role.replace('_', ' ')}
-                </p>
-              </div>
-            </div>
-          </Link>
-        </div>
+      ))}
+    </nav>
+  );
+}
+
+export default function DesktopSidebar({
+  role,
+  brand,
+}: {
+  role: string;
+  userName?: string;
+  initial?: string;
+  brand?: BrandData;
+}) {
+  return (
+    <aside className="hidden md:flex md:w-[228px] lg:w-[228px] flex-col flex-shrink-0 z-10 bg-white border-r border-slate-200 self-stretch min-h-screen">
+      <div className="h-[58px] flex items-center px-3.5 border-b border-slate-200 flex-shrink-0">
+        <SidebarBrand initialBrand={brand} />
       </div>
-    </div>
+      <SidebarNav role={role} />
+      <div className="p-3 border-t border-slate-200 mt-auto">
+        <form action={signout}>
+          <button
+            type="submit"
+            className="w-full flex items-center gap-3 px-2 py-2 rounded-md text-[13px] text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4 text-slate-600 flex-shrink-0" strokeWidth={1.6} />
+            <span>Keluar</span>
+          </button>
+        </form>
+      </div>
+    </aside>
   );
 }

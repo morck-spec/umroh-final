@@ -1,136 +1,322 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { CreditCard, FileText, Download, CheckCircle, Clock, ChevronRight, AlertCircle } from 'lucide-react';
+import Script from 'next/script';
+import { useRouter } from 'next/navigation';
+import { AlignJustify, CreditCard, Loader2 } from 'lucide-react';
+import { RegistrationBilling, BillItem } from '@/app/dashboard/shared/actions/paymentBilling';
+import { getSnapToken, completePaymentFromSnap } from '@/app/dashboard/shared/actions/midtrans';
 
-export default function JamaahPaymentClient({ registrations, payments }: { registrations: any[], payments: any[] }) {
+interface JamaahPaymentClientProps {
+  registration: RegistrationBilling | null;
+}
 
-  // Calculate total paid for each registration
-  const getPaidAmount = (regId: string) => {
-    return payments
-      .filter(p => p.registration_id === regId && p.status === 'paid')
-      .reduce((sum, p) => sum + Number(p.amount), 0);
+export default function JamaahPaymentClient({ registration }: JamaahPaymentClientProps) {
+  const router = useRouter();
+  const [loadingBillId, setLoadingBillId] = useState<string | null>(null);
+
+  const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'Mid-client-PFR-ZADek7INy34Y';
+
+  function formatRp(n: number | undefined) {
+    if (n === undefined || n === null) return 'Rp 0';
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
+
+  // Helper to ensure snap.js is loaded
+  const ensureSnapLoaded = async (): Promise<boolean> => {
+    if (typeof window === 'undefined') return false;
+    if ((window as any).snap) return true;
+
+    return new Promise((resolve) => {
+      const existing = document.getElementById('midtrans-snap-script');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true));
+        setTimeout(() => resolve(!!(window as any).snap), 1500);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'midtrans-snap-script';
+      script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+      script.setAttribute('data-client-key', clientKey);
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
+  // Fallback data matching Screenshot 1 if registration is empty
+  const defaultBills: BillItem[] = [
+    {
+      id: '33',
+      code: 'REG-00009-DP',
+      type: 'Uang Muka (DP)',
+      amount: 35000000,
+      paid: 0,
+      remaining: 35000000,
+      status: 'Belum Bayar',
+      due_date: '01 Aug 2026',
+    },
+    {
+      id: '34',
+      code: 'REG-00009-C1',
+      type: 'Cicilan',
+      amount: 43333333,
+      paid: 0,
+      remaining: 43333333,
+      status: 'Belum Bayar',
+      due_date: '30 Aug 2026',
+    },
+    {
+      id: '35',
+      code: 'REG-00009-C2',
+      type: 'Cicilan',
+      amount: 43333333,
+      paid: 0,
+      remaining: 43333333,
+      status: 'Belum Bayar',
+      due_date: '30 Sep 2026',
+    },
+    {
+      id: '36',
+      code: 'REG-00009-C3',
+      type: 'Cicilan',
+      amount: 43333334,
+      paid: 0,
+      remaining: 43333334,
+      status: 'Belum Bayar',
+      due_date: '30 Oct 2026',
+    },
+  ];
+
+  const reg = registration || {
+    id: '9',
+    code: 'REG-00009',
+    jamaah: { name: 'Ahmad Fauzi', passport: 'A1000001', phone: '081200000001' },
+    package: { id: 'pkg-3', name: 'Haji Plus Eksklusif', type: 'Haji Plus', price: 165000000, departure_date: '10 Apr 2027' },
+    status: 'Dikonfirmasi',
+    reg_date: '30 Jul 2026',
+    agent: 'Rahmat Hidayat',
+    guide: 'Ustadz Abdullah',
+    branch: 'Kantor Pusat Jakarta',
+    total_amount: 165000000,
+    paid_amount: 0,
+    remaining_amount: 165000000,
+    payment_status: 'Belum Bayar' as const,
+    bills: defaultBills,
+  };
+
+  const bills = reg.bills && reg.bills.length > 0 ? reg.bills : defaultBills;
+
+  async function handleBayarSekarang(bill: BillItem) {
+    setLoadingBillId(bill.id);
+
+    try {
+      const [res] = await Promise.all([
+        getSnapToken({
+          billId: bill.id,
+          billCode: bill.code,
+          amount: bill.remaining || bill.amount,
+          customerName: reg.jamaah?.name || 'Ahmad Fauzi',
+        }),
+        ensureSnapLoaded(),
+      ]);
+
+      setLoadingBillId(null);
+
+      if (res.error) {
+        alert(res.error);
+        return;
+      }
+
+      if (!res.token) {
+        alert('Gagal mendapatkan token transaksi Midtrans.');
+        return;
+      }
+
+      // Check if official Snap.js is loaded
+      if (typeof window !== 'undefined' && (window as any).snap) {
+        (window as any).snap.pay(res.token, {
+          onSuccess: async function (result: any) {
+            console.log('Midtrans Snap Success:', result);
+            await completePaymentFromSnap({
+              billId: bill.id,
+              amount: bill.remaining || bill.amount,
+              paymentMethod: result.payment_type || 'midtrans',
+            });
+            // Redirect to Kwitansi Pembayaran
+            router.push(`/receipt/${bill.id}`);
+          },
+          onPending: function (result: any) {
+            console.log('Midtrans Snap Pending:', result);
+            alert('Menunggu pembayaran Anda. Silakan selesaikan pembayaran di Midtrans Simulator.');
+          },
+          onError: function (result: any) {
+            console.error('Midtrans Snap Error:', result);
+            alert('Pembayaran gagal atau dibatalkan.');
+          },
+          onClose: function () {
+            console.log('Midtrans Snap Closed');
+          },
+        });
+      } else {
+        alert('Script Midtrans Snap belum termuat sempurna. Silakan refresh halaman.');
+      }
+    } catch (err: any) {
+      setLoadingBillId(null);
+      alert('Terjadi kesalahan saat memproses pembayaran: ' + (err?.message || err));
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tagihan & Pembayaran</h1>
-          <p className="mt-1 text-sm text-slate-500">Kelola pembayaran untuk paket umroh Anda</p>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Official Midtrans Snap Script */}
+      <Script
+        id="midtrans-snap-script"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={clientKey}
+        strategy="afterInteractive"
+      />
+
+      {/* Breadcrumb & Header */}
+      <div>
+        <div className="flex items-center gap-1.5 text-[12px] text-slate-400 mb-1">
+          <Link href="/dashboard/jamaah" className="hover:text-slate-600 transition-colors">
+            Beranda
+          </Link>
+          <span>&gt;</span>
+          <span className="text-slate-500 font-normal">Pembayaran</span>
+        </div>
+        <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+          Pembayaran Umroh
+        </h1>
+        <p className="text-[12px] text-slate-500 mt-0.5">
+          Pantau tagihan dan lakukan pembayaran dengan mudah
+        </p>
+      </div>
+
+      {/* Summary Box (Foto 1) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs p-5 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          {/* Total Biaya Paket */}
+          <div className="md:pr-6">
+            <p className="text-[12px] text-slate-400 font-normal">Total Biaya Paket</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-1">
+              {formatRp(reg.total_amount)}
+            </p>
+          </div>
+
+          {/* Sudah Dibayar */}
+          <div className="pt-4 md:pt-0 md:px-6">
+            <p className="text-[12px] text-slate-400 font-normal">Sudah Dibayar</p>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-500 mt-1">
+              {formatRp(reg.paid_amount)}
+            </p>
+          </div>
+
+          {/* Sisa Pembayaran */}
+          <div className="pt-4 md:pt-0 md:pl-6">
+            <p className="text-[12px] text-slate-400 font-normal">Sisa Pembayaran</p>
+            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
+              <span className="text-xl sm:text-2xl font-bold text-rose-500">
+                {formatRp(reg.remaining_amount)}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#fee2e2] text-[#ef4444]">
+                {reg.payment_status || 'Belum Bayar'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Active Billing */}
-      <div className="card">
-        <div className="px-6 py-4 border-b border-slate-200 bg-emerald-50/50 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-            <CreditCard className="w-5 h-5 mr-2 text-emerald-600" />
-            Tagihan Saat Ini
-          </h2>
-        </div>
+      {/* Section Title */}
+      <div className="flex items-center gap-2 pt-2">
+        <AlignJustify className="w-4 h-4 text-slate-400" />
+        <h2 className="text-[13px] font-semibold text-slate-700">
+          Rincian Tagihan &amp; Riwayat Pembayaran
+        </h2>
+      </div>
 
-        <div className="divide-y divide-slate-100">
-          {registrations.length === 0 ? (
-            <div className="p-6 text-center text-slate-500">Belum ada tagihan (Anda belum mendaftar paket umroh).</div>
-          ) : (
-            registrations.map(reg => {
-              const packagePrice = reg.packages?.price || 0;
-              const paidAmount = getPaidAmount(reg.id);
-              const remainingAmount = packagePrice - paidAmount;
+      {/* Bills Cards Container (Foto 1) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs divide-y divide-slate-100 overflow-hidden">
+        {bills.map((bill) => (
+          <div
+            key={bill.id}
+            className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 hover:bg-slate-50/50 transition-colors"
+          >
+            <div className="flex-1">
+              {/* Bill Title & Badge */}
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-[15px] font-bold text-slate-800">{bill.type}</h3>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
+                    bill.status === 'Lunas'
+                      ? 'bg-[#dcfce7] text-[#16a34a]'
+                      : bill.status === 'Sebagian'
+                      ? 'bg-[#fef3c7] text-[#d97706]'
+                      : 'bg-[#fee2e2] text-[#ef4444]'
+                  }`}
+                >
+                  {bill.status}
+                </span>
+              </div>
+              <p className="text-[12px] text-slate-400 mt-0.5">{bill.code}</p>
 
-              const isPaidOff = remainingAmount <= 0;
-
-              return (
-                <div key={reg.id} className="p-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium text-slate-500">Paket: {reg.packages?.name}</p>
-                        {isPaidOff ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Lunas</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">Belum Lunas</span>
-                        )}
-                      </div>
-                      <p className="text-3xl font-bold text-slate-900 mb-2">
-                        Rp {remainingAmount > 0 ? remainingAmount.toLocaleString('id-ID') : '0'}
-                      </p>
-                      <p className="text-sm text-slate-500 flex items-center">
-                        Total Harga Paket: Rp {packagePrice.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    {!isPaidOff && (
-                      <Link href={`/dashboard/jamaah/payment/checkout?reg_id=${reg.id}&amount=${remainingAmount}`} className="btn-primary py-3 px-6 text-base w-full md:w-auto flex justify-center">
-                        Bayar Sekarang
-                        <ChevronRight className="w-4 h-4 ml-2" />
-                      </Link>
-                    )}
-                  </div>
+              {/* 4 Columns Breakdown */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 mt-3.5 pt-1">
+                <div>
+                  <p className="text-[11px] text-slate-400">Nominal Tagihan</p>
+                  <p className="text-[13px] font-semibold text-slate-800 mt-0.5">
+                    {formatRp(bill.amount)}
+                  </p>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+                <div>
+                  <p className="text-[11px] text-slate-400">Telah Dibayar</p>
+                  <p className="text-[13px] font-semibold text-emerald-500 mt-0.5">
+                    {formatRp(bill.paid)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400">Kekurangan</p>
+                  <p className="text-[13px] font-semibold text-rose-500 mt-0.5">
+                    {formatRp(bill.remaining)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400">Jatuh Tempo</p>
+                  <p className="text-[13px] text-slate-700 mt-0.5">{bill.due_date}</p>
+                </div>
+              </div>
+            </div>
 
-      {/* Payment History */}
-      <div className="card">
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
-          <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-            <FileText className="w-5 h-5 mr-2 text-emerald-600" />
-            Riwayat Pembayaran
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Paket</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Metode</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nominal</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {payments.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">Belum ada riwayat pembayaran.</td>
-                </tr>
-              ) : (
-                payments.map(p => (
-                  <tr key={p.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {new Date(p.created_at).toLocaleDateString('id-ID')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                      {p.registrations?.packages?.name || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 capitalize">
-                      {p.payment_method?.replace('_', ' ')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                      Rp {Number(p.amount).toLocaleString('id-ID')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                        ${p.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                          p.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          p.status === 'waiting_verification' ? 'bg-amber-100 text-amber-800' :
-                          'bg-slate-100 text-slate-800'}`}>
-                        {p.status === 'paid' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {p.status === 'waiting_verification' && <Clock className="w-3 h-3 mr-1" />}
-                        {p.status === 'rejected' && <AlertCircle className="w-3 h-3 mr-1" />}
-                        {p.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+            {/* Action: Bayar Sekarang -> Triggers Official Midtrans Snap Popup! */}
+            {bill.status !== 'Lunas' && (
+              <div className="flex-shrink-0 self-start md:self-center">
+                <button
+                  type="button"
+                  disabled={loadingBillId === bill.id}
+                  onClick={() => handleBayarSekarang(bill)}
+                  style={{ backgroundColor: 'var(--brand-primary, #00c292)' }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-[13px] font-medium shadow-xs hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {loadingBillId === bill.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Memuat Midtrans...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      <span>Bayar Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

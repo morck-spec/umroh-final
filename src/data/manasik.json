@@ -1,0 +1,156 @@
+[
+  {
+    "id": "8",
+    "title": "Manasik Haji Plus Eksklusif #2",
+    "package_name": "Haji Plus Eksklusif",
+    "instructor": "Ustadz Abdullah",
+    "date": "2026-10-27",
+    "date_formatted": "27 Oct 2026",
+    "time_start": "08:00",
+    "time_end": "12:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Pembekalan manasik dan tata cara ibadah.",
+    "attendances": []
+  },
+  {
+    "id": "7",
+    "title": "Manasik Haji Khusus 2026 #2",
+    "package_name": "Haji Khusus 2026",
+    "instructor": "Ustadzah Khadijah",
+    "date": "2026-10-26",
+    "date_formatted": "26 Oct 2026",
+    "time_start": "08:00",
+    "time_end": "12:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Bimbingan rukun haji khusus dan wukuf.",
+    "attendances": [
+      {
+        "jamaah_name": "Hesti Purnama",
+        "status": "Tidak Hadir"
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "title": "Manasik Umroh Plus Turki 12 Hari #2",
+    "package_name": "Umroh Plus Turki 12 Hari",
+    "instructor": "Ustadz Fauzan",
+    "date": "2026-10-25",
+    "date_formatted": "25 Oct 2026",
+    "time_start": "09:00",
+    "time_end": "13:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Praktik tawaf dan sai serta pengenalan rute Turki.",
+    "attendances": [
+      {
+        "jamaah_name": "Gunawan Wibowo",
+        "status": "Tidak Hadir"
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Manasik Umroh Reguler 9 Hari #2",
+    "package_name": "Umroh Reguler 9 Hari",
+    "instructor": "Ustadz Abdullah",
+    "date": "2026-10-24",
+    "date_formatted": "24 Oct 2026",
+    "time_start": "08:30",
+    "time_end": "12:30",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Tata cara ihram, niat dan larangan ihram.",
+    "attendances": []
+  },
+  {
+    "id": "4",
+    "title": "Manasik Haji Plus Eksklusif #1",
+    "package_name": "Haji Plus Eksklusif",
+    "instructor": "Ustadz Abdullah",
+    "date": "2026-09-27",
+    "date_formatted": "27 Sep 2026",
+    "time_start": "08:00",
+    "time_end": "12:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Pengenalan filosofi dan persiapan fisik haji plus.",
+    "attendances": [
+      {
+        "jamaah_name": "Dewi Anggraini",
+        "status": "Hadir"
+      },
+      {
+        "jamaah_name": "Ahmad Fauzi",
+        "status": "Hadir"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Manasik Haji Khusus 2026 #1",
+    "package_name": "Haji Khusus 2026",
+    "instructor": "Ustadzah Khadijah",
+    "date": "2026-09-26",
+    "date_formatted": "26 Sep 2026",
+    "time_start": "08:00",
+    "time_end": "12:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Pembekalan umum fiqih haji.",
+    "attendances": [
+      {
+        "jamaah_name": "Hesti Purnama",
+        "status": "Hadir"
+      },
+      {
+        "jamaah_name": "Ahmad Fauzi",
+        "status": "Hadir"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Manasik Umroh Plus Turki 12 Hari #1",
+    "package_name": "Umroh Plus Turki 12 Hari",
+    "instructor": "Ustadz Fauzan",
+    "date": "2026-09-25",
+    "date_formatted": "25 Sep 2026",
+    "time_start": "09:00",
+    "time_end": "13:00",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Bimbingan dasar umroh dan koordinasi perlengkapan.",
+    "attendances": [
+      {
+        "jamaah_name": "Gunawan Wibowo",
+        "status": "Hadir"
+      },
+      {
+        "jamaah_name": "Ahmad Fauzi",
+        "status": "Hadir"
+      },
+      {
+        "jamaah_name": "Siti Rahmawati",
+        "status": "Tidak Hadir"
+      }
+    ]
+  },
+  {
+    "id": "1",
+    "title": "Manasik Umroh Reguler 9 Hari #1",
+    "package_name": "Umroh Reguler 9 Hari",
+    "instructor": "Ustadz Abdullah",
+    "date": "2026-09-24",
+    "date_formatted": "24 Sep 2026",
+    "time_start": "08:30",
+    "time_end": "12:30",
+    "location": "Aula Kantor Pusat Jakarta",
+    "description": "Pengenalan manasik umroh reguler.",
+    "attendances": [
+      {
+        "jamaah_name": "Siti Rahmawati",
+        "status": "Hadir"
+      },
+      {
+        "jamaah_name": "Dewi Anggraini",
+        "status": "Hadir"
+      }
+    ]
+  }
+]

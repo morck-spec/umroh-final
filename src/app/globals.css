@@ -1,30 +1,52 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --almadinah-dark: #065f46;
+    --almadinah-emerald: #159b70;
+    --almadinah-light: #d1fae5;
+    --almadinah-bg: #f7faf9;
+    --almadinah-text: #172b35;
+  }
+
   body {
-    background-color: var(--color-slate-50);
-    color: var(--color-slate-800);
+    background-color: #f7faf9;
+    color: #172b35;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    color: var(--color-slate-900);
+    font-weight: 700;
+    color: #172b35;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-[#065F46] hover:bg-[#044E39] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-emerald {
+    @apply inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-[#159B70] hover:bg-[#0F7657] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply inline-flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex justify-center items-center px-4 py-2 border border-slate-200 shadow-xs text-sm font-semibold rounded-lg text-[#172B35] bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .input-field {
-    @apply mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border px-3 py-2;
+    @apply mt-1 block w-full rounded-lg border-slate-200 shadow-xs focus:border-[#159B70] focus:ring-[#159B70] sm:text-sm border px-3.5 py-2.5 bg-white text-[#172B35] transition-all;
   }
   .card {
-    @apply bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden;
+    @apply bg-white shadow-xs border border-slate-100 rounded-xl overflow-hidden;
+  }
+  .card-hover {
+    @apply bg-white shadow-xs hover:shadow-md border border-slate-100 rounded-xl transition-all duration-200;
   }
 }
+
+/* Background Micro Dot Pattern */
+.bg-dot-pattern {
+  background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px);
+  background-size: 20px 20px;
+}
+

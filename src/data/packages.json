@@ -1,0 +1,179 @@
+[
+  {
+    "id": "e8fefa3d-0d83-441e-99b0-1fc0d5050eb1",
+    "code": "PKG-UMR9",
+    "name": "Umroh Reguler 9 Hari",
+    "type": "Umroh",
+    "status": "Dibuka",
+    "branch_name": "Kantor Pusat Jakarta",
+    "price": 28500000,
+    "down_payment": 5000000,
+    "duration_days": 9,
+    "departure_date": "2026-12-10",
+    "departure_city": "Jakarta",
+    "quota": 45,
+    "registered_count": 3,
+    "hotel_makkah": "Swissôtel Al Maqam Makkah",
+    "hotel_madinah": "Anwar Al Madinah Mövenpick",
+    "airline": "Saudi Arabian Airlines",
+    "facilities_included": [
+      "Tiket pesawat PP",
+      "Hotel bintang 4/5",
+      "Visa & manasik",
+      "Makan 3x sehari",
+      "Bus AC"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi",
+      "Kelebihan bagasi",
+      "Vaksin"
+    ],
+    "description": "Paket perjalanan ibadah dengan bimbingan muthawif berpengalaman."
+  },
+  {
+    "id": "4cc85b01-738a-4d94-abc5-090d96f14e4e",
+    "code": "PKG-UMR12",
+    "name": "Umroh Plus Turki 12 Hari",
+    "type": "Umroh",
+    "status": "Dibuka",
+    "branch_name": "Kantor Pusat Jakarta",
+    "price": 36500000,
+    "down_payment": 5000000,
+    "duration_days": 12,
+    "departure_date": "2027-01-10",
+    "departure_city": "Jakarta",
+    "quota": 40,
+    "registered_count": 3,
+    "hotel_makkah": "Pullman Zamzam Makkah",
+    "hotel_madinah": "Dar Al Taqwa Madinah",
+    "airline": "Turkish Airlines",
+    "facilities_included": [
+      "Tiket pesawat PP",
+      "Hotel bintang 5",
+      "Visa Umroh & Visa Turki",
+      "Tour Istanbul & Bursa",
+      "Makan 3x sehari",
+      "Bus VIP"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi",
+      "Kelebihan bagasi",
+      "Biaya paspor"
+    ],
+    "description": "Paket Umroh Plus Turki 12 Hari Bintang 5 bersama keluarga."
+  },
+  {
+    "id": "41ae616a-c4ec-421f-9ca0-771a17be1a7a",
+    "code": "PKG-HAJ",
+    "name": "Haji Khusus 2026",
+    "type": "Haji",
+    "status": "Dibuka",
+    "branch_name": "Kantor Pusat Jakarta",
+    "price": 125000000,
+    "down_payment": 25000000,
+    "duration_days": 25,
+    "departure_date": "2027-02-10",
+    "departure_city": "Jakarta",
+    "quota": 30,
+    "registered_count": 2,
+    "hotel_makkah": "Fairmont Makkah Clock Royal Tower",
+    "hotel_madinah": "The Oberoi Madinah",
+    "airline": "Garuda Indonesia",
+    "facilities_included": [
+      "Tenda AC Maktab VIP di Arafah & Mina",
+      "Tiket pesawat PP direct",
+      "Hotel bintang 5 dekat masjid",
+      "Bimbingan intensif manasik haji",
+      "Muthawif berlisensi resmi"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi",
+      "Dam haji tamattu"
+    ],
+    "description": "Paket Haji Khusus Kuota Resmi Kemenag dengan fasilitas bintang 5."
+  },
+  {
+    "id": "411878bc-52f2-4bbf-9beb-e8b4ce104bbb",
+    "code": "PKG-HAJP",
+    "name": "Haji Plus Eksklusif",
+    "type": "Haji Plus",
+    "status": "Dibuka",
+    "branch_name": "Kantor Pusat Jakarta",
+    "price": 140000000,
+    "down_payment": 30000000,
+    "duration_days": 28,
+    "departure_date": "2027-04-10",
+    "departure_city": "Jakarta",
+    "quota": 20,
+    "registered_count": 2,
+    "hotel_makkah": "Raffles Makkah Palace",
+    "hotel_madinah": "Madinah Hilton",
+    "airline": "Saudia",
+    "facilities_included": [
+      "Maktab Eksklusif",
+      "Tiket pesawat Business/Economy VIP",
+      "Hotel Bintang 5 depan pelataran Haram",
+      "Full board catering"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi"
+    ],
+    "description": "Paket Haji Plus Fasilitas VIP dan bimbingan ibadah eksklusif."
+  },
+  {
+    "id": "ddffe311-c3ff-4cf8-9aa3-2505a896b45c",
+    "code": "PKG-UMRA",
+    "name": "Umroh Akhir Tahun",
+    "type": "Umroh",
+    "status": "Dibuka",
+    "branch_name": "Kantor Pusat Jakarta",
+    "price": 32000000,
+    "down_payment": 5000000,
+    "duration_days": 10,
+    "departure_date": "2026-11-10",
+    "departure_city": "Jakarta",
+    "quota": 50,
+    "registered_count": 2,
+    "hotel_makkah": "Makkah Hotel & Towers",
+    "hotel_madinah": "Grand Plaza Badr Al Maqam",
+    "airline": "Lion Air Umrah Direct",
+    "facilities_included": [
+      "Tiket pesawat PP",
+      "Hotel bintang 4",
+      "Visa & manasik",
+      "Makan 3x sehari"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi",
+      "Kelebihan bagasi"
+    ],
+    "description": "Paket Umroh Liburan Akhir Tahun Bersama Keluarga tercinta."
+  },
+  {
+    "id": "23001800-b2cb-46e8-8ffa-6fc14aa1eb5b",
+    "code": "PKG-UMR14",
+    "name": "umroh ",
+    "type": "Umroh",
+    "status": "Dibuka",
+    "branch_name": "cabang jember",
+    "price": 55000000,
+    "down_payment": 5000000,
+    "duration_days": 14,
+    "departure_date": "2026-10-16",
+    "departure_city": "Surabaya",
+    "quota": 55,
+    "registered_count": 0,
+    "hotel_makkah": "hotel 2",
+    "hotel_madinah": "hotel 2",
+    "airline": "Saudia",
+    "facilities_included": [
+      "Tiket pesawat PP",
+      "Akomodasi Hotel",
+      "Visa & Manasik"
+    ],
+    "facilities_excluded": [
+      "Pengeluaran pribadi"
+    ],
+    "description": "hotel 2"
+  }
+]

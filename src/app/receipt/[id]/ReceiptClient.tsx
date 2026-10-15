@@ -23,9 +23,9 @@ export default function ReceiptClient({ payment }: { payment: PaymentData }) {
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-8 font-sans">
       <div className="max-w-3xl mx-auto mb-6 flex justify-between items-center print:hidden">
-        <Link href="javascript:history.back()" className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+        <Link href="/dashboard/jamaah/payment" className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Kembali
+          Kembali ke Pembayaran
         </Link>
         <button
           onClick={handlePrint}

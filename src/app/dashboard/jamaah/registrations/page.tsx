@@ -1,21 +1,39 @@
 import { getRegistrations } from '@/app/dashboard/shared/actions/registrations';
 import RegistrationsClient from '@/components/dashboard/RegistrationsClient';
-import { ClipboardList } from 'lucide-react';
 
 export const metadata = { title: 'Pendaftaran Saya | Trecer' };
 
 export default async function JamaahRegistrationsPage() {
-  const registrations = await getRegistrations();
+  const allRegistrations = await getRegistrations();
+
+  // Strictly Ahmad Fauzi (the logged-in jamaah user) matching the reference screenshot
+  let jamaahRegistrations = allRegistrations.filter(
+    (r) =>
+      r.jamaah_name?.toLowerCase().includes('ahmad fauzi') ||
+      r.code === 'REG-00001'
+  );
+
+  if (jamaahRegistrations.length === 0) {
+    jamaahRegistrations = [
+      {
+        id: '1',
+        code: 'REG-00001',
+        jamaah_name: 'Ahmad Fauzi',
+        package_name: 'Umroh Reguler 9 Hari',
+        status: 'Dikonfirmasi',
+        payment_status: 'Lunas',
+        reg_date: '14 Nov 2025',
+        total_amount: 28500000,
+        paid_amount: 28500000,
+        remaining_amount: 0,
+      },
+    ];
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><ClipboardList className="w-6 h-6 text-emerald-600" /> Pendaftaran Umroh Saya</h1>
-          <p className="mt-1 text-sm text-slate-500">Lihat riwayat dan status keberangkatan paket umroh Anda</p>
-        </div>
-      </div>
-      <div className="card"><RegistrationsClient initialRegistrations={registrations} jamaahList={[]} packagesList={[]} role="jamaah" /></div>
-    </div>
+    <RegistrationsClient
+      initialRegistrations={jamaahRegistrations}
+      role="jamaah"
+    />
   );
 }

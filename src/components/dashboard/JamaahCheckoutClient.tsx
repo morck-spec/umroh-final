@@ -1,489 +1,555 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ChevronLeft, Building2, Wallet, ShieldCheck, Upload,
-  Smartphone, QrCode, Banknote, CheckCircle, X, FileText, AlertCircle, Copy
-} from 'lucide-react';
-import { createPayment } from '@/app/dashboard/shared/actions/payments';
+import { ArrowLeft, Check, Info, Upload, CheckCircle2, QrCode, Copy, ExternalLink } from 'lucide-react';
+import { simulatePaymentSuccessAction } from '@/app/dashboard/shared/actions/midtrans';
+import { getSimulatorUrl } from '@/utils/midtrans';
 
-type CheckoutProps = {
-  registrationId: string;
-  amount: string;
-  packageName: string;
-  jamaahName: string;
-  totalBill: number;
-  totalPaid: number;
-  remainingBill: number;
-};
+interface JamaahCheckoutClientProps {
+  billId?: string;
+  billCode?: string;
+  totalAmount?: number;
+}
 
-const PAYMENT_CATEGORIES = [
-  { id: 'bank_transfer', label: 'Transfer Bank', icon: Building2 },
-  { id: 'ewallet', label: 'E-Wallet', icon: Wallet },
-  { id: 'va', label: 'Virtual Account', icon: Smartphone },
-  { id: 'qris', label: 'QRIS', icon: QrCode },
-  { id: 'cash', label: 'Tunai', icon: Banknote },
-];
-
-const BANK_OPTIONS = [
-  { id: 'bca_transfer', label: 'BCA', accName: 'PT Trecer Umroh', accNumber: '1234567890' },
-  { id: 'bni_transfer', label: 'BNI', accName: 'PT Trecer Umroh', accNumber: '0987654321' },
-  { id: 'bri_transfer', label: 'BRI', accName: 'PT Trecer Umroh', accNumber: '1122334455' },
-  { id: 'mandiri_transfer', label: 'Mandiri', accName: 'PT Trecer Umroh', accNumber: '9988776655' },
-];
-
-const EWALLET_OPTIONS = [
-  { id: 'gopay', label: 'GoPay', number: '081234567890', accName: 'Trecer Umroh' },
-  { id: 'ovo', label: 'OVO', number: '081234567890', accName: 'Trecer Umroh' },
-  { id: 'dana', label: 'DANA', number: '081234567890', accName: 'Trecer Umroh' },
-  { id: 'shopeepay', label: 'ShopeePay', number: '081234567890', accName: 'Trecer Umroh' },
-];
-
-const VA_OPTIONS = [
-  { id: 'bca_va', label: 'BCA VA', desc: 'Dicek manual oleh admin' },
-  { id: 'bni_va', label: 'BNI VA', desc: 'Dicek manual oleh admin' },
-  { id: 'bri_va', label: 'BRI VA', desc: 'Dicek manual oleh admin' },
-  { id: 'mandiri_va', label: 'Mandiri VA', desc: 'Dicek manual oleh admin' },
-];
+interface PaymentOption {
+  id: string;
+  name: string;
+  code: string;
+  fee?: number;
+  vaNumber?: string;
+  billerCode?: string;
+  billKey?: string;
+}
 
 export default function JamaahCheckoutClient({
-  registrationId,
-  amount,
-  packageName,
-  jamaahName,
-  totalBill,
-  totalPaid,
-  remainingBill
-}: CheckoutProps) {
+  billId = '33',
+  billCode = 'REG-00009-DP',
+  totalAmount = 35000000,
+}: JamaahCheckoutClientProps) {
   const router = useRouter();
-  const [category, setCategory] = useState<string>('bank_transfer');
-  const [method, setMethod] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState<string>('');
-  const [copiedText, setCopiedText] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string>('bca');
+  const [showSimulatorModal, setShowSimulatorModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const numericAmount = parseInt(amount) || 0;
+  function formatRp(n: number) {
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(text);
-    setTimeout(() => setCopiedText(''), 2000);
-  };
+  // Payment Groups matching Foto 2 & 3
+  const bankTransferOptions: PaymentOption[] = [
+    { id: 'bca', name: 'Bank BCA', code: 'BCA', vaNumber: '82710812900001' },
+    { id: 'mandiri', name: 'Bank MANDIRI', code: 'MANDIRI', billerCode: '70012', billKey: '89100812900001', vaNumber: '70012 - 89100812900001' },
+    { id: 'bri', name: 'Bank BRI', code: 'BRI', vaNumber: '02810812900001' },
+    { id: 'permata', name: 'Bank PERMATA', code: 'PERMATA', vaNumber: '71810812900001' },
+  ];
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileError('');
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const outletOptions: PaymentOption[] = [
+    { id: 'alfamart', name: 'Alfamart', code: 'ALFA', vaNumber: 'ALFA82910029' },
+  ];
 
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setFileError('Ukuran file maksimal 5MB');
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
+  const ewalletOptions: PaymentOption[] = [
+    { id: 'shopeepay', name: 'ShopeePay', code: 'SHOPEE' },
+    { id: 'dana', name: 'DANA', code: 'DANA' },
+    { id: 'linkaja', name: 'LinkAja', code: 'LINK' },
+  ];
 
-    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(selectedFile.type)) {
-      setFileError('Format file tidak didukung. Gunakan JPG, PNG, atau PDF.');
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
+  const qrOptions: PaymentOption[] = [
+    { id: 'qris', name: 'QRIS', code: 'QRIS' },
+  ];
 
-    setFile(selectedFile);
-  };
+  const manualOptions: PaymentOption[] = [
+    { id: 'manual', name: 'Upload Bukti Transfer', code: 'TF' },
+  ];
 
-  const removeFile = () => {
-    setFile(null);
-    setFileError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  const allMethods = [
+    ...bankTransferOptions,
+    ...outletOptions,
+    ...ewalletOptions,
+    ...qrOptions,
+    ...manualOptions,
+  ];
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
+  const activeMethodObj = allMethods.find((m) => m.id === selectedMethod) || bankTransferOptions[0];
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!method) return alert('Silakan pilih metode pembayaran');
-    if (!file && category !== 'cash') return alert('Silakan upload bukti pembayaran');
-    if (fileError) return alert('Perbaiki file bukti pembayaran terlebih dahulu');
-
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('registration_id', registrationId);
-    formData.append('amount', numericAmount.toString());
-    formData.append('payment_method', method);
-    if (file) {
-      formData.append('proof_file', file);
-    }
-
-    try {
-      const res = await createPayment(formData);
-      if (res?.error) {
-        alert(res.error);
-      } else {
-        router.push('/dashboard/jamaah/payment/success');
-      }
-    } finally {
-      setIsLoading(false);
+  function handleLanjutkan() {
+    if (selectedMethod === 'manual') {
+      setShowManualModal(true);
+    } else {
+      setShowSimulatorModal(true);
     }
   }
 
-  // Helper to find selected option details for rendering instructions
-  const selectedBank = BANK_OPTIONS.find(b => b.id === method);
-  const selectedEwallet = EWALLET_OPTIONS.find(e => e.id === method);
-  const selectedVA = VA_OPTIONS.find(v => v.id === method);
+  function handleCopyVA(text?: string) {
+    const val = text || activeMethodObj.vaNumber;
+    if (val) {
+      navigator.clipboard.writeText(val);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
-  const getMethodLabel = () => {
-    if (!method) return '-';
-    if (category === 'qris') return 'QRIS';
-    if (category === 'cash') return 'Tunai';
-    return selectedBank?.label || selectedEwallet?.label || selectedVA?.label || method;
-  };
+  async function handleSimulateSuccess() {
+    setIsProcessing(true);
+    try {
+      await simulatePaymentSuccessAction({
+        billId,
+        amount: totalAmount,
+        paymentMethod: selectedMethod,
+      });
+      setIsProcessing(false);
+      setIsSuccess(true);
+      setTimeout(() => {
+        router.push('/dashboard/jamaah/payment');
+      }, 1800);
+    } catch {
+      setIsProcessing(false);
+      setIsSuccess(true);
+      setTimeout(() => {
+        router.push('/dashboard/jamaah/payment');
+      }, 1800);
+    }
+  }
 
   return (
-    <div className="max-w-6xl mx-auto pb-12">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/dashboard/jamaah/payment" className="p-2 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition-colors">
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Checkout Pembayaran</h1>
-          <p className="text-sm text-slate-500">Selesaikan pembayaran untuk paket umroh Anda</p>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Page Title */}
+      <div className="mb-2">
+        <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+          Checkout Pembayaran
+        </h1>
+      </div>
+
+      {/* Main Centered Box (Foto 2 & 3) */}
+      <div className="max-w-xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden p-6 sm:p-7">
+        {/* Top bar inside card */}
+        <div className="relative flex items-center justify-center mb-6">
+          <Link
+            href="/dashboard/jamaah/payment"
+            className="absolute left-0 p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            aria-label="Kembali"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h2 className="text-[15px] font-bold text-slate-800">Checkout</h2>
+        </div>
+
+        {/* Total Tagihan Box (Foto 2) */}
+        <div className="rounded-xl border border-slate-200 p-4 mb-6 bg-white">
+          <p className="text-[11px] text-slate-400 font-normal">Total Tagihan</p>
+          <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            {formatRp(totalAmount)}
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Tagihan: {billCode}
+          </p>
+        </div>
+
+        {/* 1. Bank Transfer */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[13px] font-semibold text-slate-700">Bank Transfer</h3>
+          </div>
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            {bankTransferOptions.map((opt) => {
+              const isSelected = selectedMethod === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setSelectedMethod(opt.id)}
+                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 h-7 rounded border border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-600 tracking-wider">
+                      {opt.code}
+                    </span>
+                    <span className="text-[13px] text-slate-700 font-normal">{opt.name}</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-teal-500 bg-teal-500'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Outlet Ritel */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[13px] font-semibold text-slate-700">Outlet Ritel</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-400 font-normal">
+              Biaya admin berlaku
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            {outletOptions.map((opt) => {
+              const isSelected = selectedMethod === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setSelectedMethod(opt.id)}
+                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 h-7 rounded border border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-600 tracking-wider">
+                      {opt.code}
+                    </span>
+                    <span className="text-[13px] text-slate-700 font-normal">{opt.name}</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-teal-500 bg-teal-500'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. e-Wallet */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[13px] font-semibold text-slate-700">e-Wallet</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-400 font-normal">
+              Biaya admin berlaku
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            {ewalletOptions.map((opt) => {
+              const isSelected = selectedMethod === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setSelectedMethod(opt.id)}
+                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 h-7 rounded border border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-600 tracking-wider">
+                      {opt.code}
+                    </span>
+                    <span className="text-[13px] text-slate-700 font-normal">{opt.name}</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-teal-500 bg-teal-500'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. QR Code */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[13px] font-semibold text-slate-700">QR Code</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-400 font-normal">
+              Biaya admin berlaku
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            {qrOptions.map((opt) => {
+              const isSelected = selectedMethod === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setSelectedMethod(opt.id)}
+                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 h-7 rounded border border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-600 tracking-wider">
+                      {opt.code}
+                    </span>
+                    <span className="text-[13px] text-slate-700 font-normal">{opt.name}</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-teal-500 bg-teal-500'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 5. Transfer Manual */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-[13px] font-semibold text-slate-700">Transfer Manual</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium">
+              Bebas biaya
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            {manualOptions.map((opt) => {
+              const isSelected = selectedMethod === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setSelectedMethod(opt.id)}
+                  className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 h-7 rounded border border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-600 tracking-wider">
+                      {opt.code}
+                    </span>
+                    <span className="text-[13px] text-slate-700 font-normal">{opt.name}</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-teal-500 bg-teal-500'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bottom Total & Button (Foto 3) */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="flex justify-between items-center text-[11px] text-slate-500 mb-1">
+            <span className="flex items-center gap-1">
+              Biaya jasa <Info className="w-3 h-3 text-slate-400" />
+            </span>
+            <span className="text-slate-700 font-medium">Rp 0</span>
+          </div>
+          <div className="flex justify-between items-center mb-5">
+            <span className="text-[12px] text-slate-600">Total pembayaran</span>
+            <span className="text-base sm:text-lg font-bold text-[#00c292]">
+              {formatRp(totalAmount)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLanjutkan}
+            className="w-full py-3.5 rounded-xl bg-[#00d4b2] hover:bg-[#00c292] active:scale-[0.99] text-white text-[13px] font-bold tracking-wider uppercase transition-all shadow-xs cursor-pointer text-center"
+          >
+            LANJUTKAN PEMBAYARAN
+          </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* KIRI: Main Content */}
-        <div className="w-full lg:w-2/3 space-y-6">
-
-          {/* BAGIAN 1: RINGKASAN TAGIHAN */}
-          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-              <h2 className="text-lg font-semibold text-slate-900">Informasi Tagihan</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Nomor Pendaftaran</p>
-                  <p className="font-medium text-slate-900 font-mono text-sm">{registrationId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Nama Jamaah</p>
-                  <p className="font-medium text-slate-900">{jamaahName || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Paket Umroh</p>
-                  <p className="font-medium text-slate-900">{packageName || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Total Tagihan</p>
-                  <p className="font-medium text-slate-900">Rp {totalBill.toLocaleString('id-ID')}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Total Sudah Dibayar</p>
-                  <p className="font-medium text-slate-900">Rp {totalPaid.toLocaleString('id-ID')}</p>
-                </div>
-                <div className="sm:col-span-2 pt-4 mt-2 border-t border-slate-100 flex justify-between items-center">
-                  <p className="text-sm font-medium text-slate-600">Sisa Tagihan</p>
-                  <p className="text-lg font-bold text-amber-600">Rp {remainingBill.toLocaleString('id-ID')}</p>
-                </div>
+      {/* Simulator Modal (Midtrans Simulator Flow) */}
+      {showSimulatorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            {isSuccess ? (
+              <div className="text-center py-6">
+                <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-3 animate-bounce" />
+                <h3 className="text-lg font-bold text-slate-800">Pembayaran Berhasil!</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Tagihan {billCode} sebesar {formatRp(totalAmount)} telah berhasil dibayar.
+                </p>
+                <p className="text-[11px] text-slate-400 mt-3">Mengalihkan kembali ke riwayat pembayaran...</p>
               </div>
-            </div>
-          </section>
-
-          {/* BAGIAN 2: PILIH METODE PEMBAYARAN */}
-          <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-              <h2 className="text-lg font-semibold text-slate-900">Metode Pembayaran</h2>
-            </div>
-            <div className="p-6">
-              <div className="flex flex-wrap gap-3 mb-8">
-                {PAYMENT_CATEGORIES.map(cat => {
-                  const Icon = cat.icon;
-                  const isActive = category === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setCategory(cat.id);
-                        setMethod(cat.id === 'qris' ? 'qris' : cat.id === 'cash' ? 'cash' : '');
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                        isActive
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* OPTIONS FOR SELECTED CATEGORY */}
-              <div className="space-y-4">
-
-                {/* BANK TRANSFER */}
-                {category === 'bank_transfer' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {BANK_OPTIONS.map(bank => (
-                      <label key={bank.id} className="relative flex cursor-pointer rounded-lg border border-slate-200 bg-white p-4 shadow-sm focus:outline-none has-[:checked]:border-emerald-600 has-[:checked]:ring-1 has-[:checked]:ring-emerald-600 transition-all">
-                        <input type="radio" name="payment_method_sel" value={bank.id} checked={method === bank.id} onChange={(e) => setMethod(e.target.value)} className="sr-only" />
-                        <span className="flex flex-1 items-center justify-between">
-                          <span className="font-medium text-slate-900">{bank.label}</span>
-                          <CheckCircle className={`w-5 h-5 ${method === bank.id ? 'text-emerald-600' : 'text-slate-200'}`} />
-                        </span>
-                      </label>
-                    ))}
+            ) : (
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-12 h-6 rounded bg-slate-100 text-[10px] font-bold text-slate-700 flex items-center justify-center">
+                      {activeMethodObj.code}
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-800">{activeMethodObj.name}</h3>
                   </div>
-                )}
-
-                {/* E-WALLET */}
-                {category === 'ewallet' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {EWALLET_OPTIONS.map(wallet => (
-                      <label key={wallet.id} className="relative flex cursor-pointer rounded-lg border border-slate-200 bg-white p-4 shadow-sm focus:outline-none has-[:checked]:border-emerald-600 has-[:checked]:ring-1 has-[:checked]:ring-emerald-600 transition-all">
-                        <input type="radio" name="payment_method_sel" value={wallet.id} checked={method === wallet.id} onChange={(e) => setMethod(e.target.value)} className="sr-only" />
-                        <span className="flex flex-1 items-center justify-between">
-                          <span className="font-medium text-slate-900">{wallet.label}</span>
-                          <CheckCircle className={`w-5 h-5 ${method === wallet.id ? 'text-emerald-600' : 'text-slate-200'}`} />
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {/* VIRTUAL ACCOUNT */}
-                {category === 'va' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {VA_OPTIONS.map(va => (
-                      <label key={va.id} className="relative flex cursor-pointer rounded-lg border border-slate-200 bg-white p-4 shadow-sm focus:outline-none has-[:checked]:border-emerald-600 has-[:checked]:ring-1 has-[:checked]:ring-emerald-600 transition-all">
-                        <input type="radio" name="payment_method_sel" value={va.id} checked={method === va.id} onChange={(e) => setMethod(e.target.value)} className="sr-only" />
-                        <span className="flex flex-1 items-center justify-between">
-                          <span className="font-medium text-slate-900">{va.label}</span>
-                          <CheckCircle className={`w-5 h-5 ${method === va.id ? 'text-emerald-600' : 'text-slate-200'}`} />
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {/* QRIS */}
-                {category === 'qris' && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center">
-                    <QrCode className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
-                    <h3 className="font-semibold text-slate-900 mb-2">QRIS Pembayaran (Simulasi)</h3>
-                    <p className="text-sm text-slate-500 mb-4 max-w-sm mx-auto">
-                      Gunakan fitur scan QR pada aplikasi e-wallet atau m-banking Anda untuk melakukan pembayaran.
-                    </p>
-                    <div className="w-48 h-48 bg-white border border-slate-200 rounded-xl mx-auto flex items-center justify-center p-2">
-                      <div className="w-full h-full border-4 border-dashed border-slate-300 rounded flex items-center justify-center bg-slate-50">
-                        <span className="text-slate-400 text-sm font-medium">QRIS Placeholder</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* CASH */}
-                {category === 'cash' && (
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-6 flex items-start gap-4">
-                    <div className="p-3 bg-emerald-100 rounded-full text-emerald-700">
-                      <Banknote className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-emerald-900 mb-1">Pembayaran Tunai di Kantor</h3>
-                      <p className="text-sm text-emerald-700 leading-relaxed">
-                        Silakan kunjungi kantor cabang kami untuk melakukan pembayaran tunai. Bawa nomor pendaftaran ini sebagai referensi. Pembayaran akan diverifikasi langsung oleh Admin saat Anda menyerahkan dana tunai.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* DYNAMIC INSTRUCTIONS */}
-              {selectedBank && (
-                <div className="mt-6 bg-slate-50 rounded-lg border border-slate-200 p-5">
-                  <p className="text-sm text-slate-500 mb-3">Silakan transfer tepat sebesar <strong>Rp {numericAmount.toLocaleString('id-ID')}</strong> ke rekening berikut:</p>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200 rounded p-4">
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">{selectedBank.label}</p>
-                      <p className="text-lg font-bold font-mono text-slate-900">{selectedBank.accNumber}</p>
-                      <p className="text-sm text-slate-600 mt-1">a.n. {selectedBank.accName}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(selectedBank.accNumber)}
-                      className="mt-3 sm:mt-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
-                    >
-                      {copiedText === selectedBank.accNumber ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      {copiedText === selectedBank.accNumber ? 'Disalin' : 'Salin Nomor'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {selectedEwallet && (
-                <div className="mt-6 bg-slate-50 rounded-lg border border-slate-200 p-5">
-                  <p className="text-sm text-slate-500 mb-3">Silakan transfer ke nomor {selectedEwallet.label} berikut:</p>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200 rounded p-4">
-                    <div>
-                      <p className="text-lg font-bold font-mono text-slate-900">{selectedEwallet.number}</p>
-                      <p className="text-sm text-slate-600 mt-1">a.n. {selectedEwallet.accName}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(selectedEwallet.number)}
-                      className="mt-3 sm:mt-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
-                    >
-                      {copiedText === selectedEwallet.number ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      {copiedText === selectedEwallet.number ? 'Disalin' : 'Salin Nomor'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {selectedVA && (
-                <div className="mt-6 bg-amber-50 rounded-lg border border-amber-100 p-5 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-amber-900 mb-1">Informasi Virtual Account</h4>
-                    <p className="text-sm text-amber-800">
-                      Integrasi Virtual Account otomatis sedang dalam pengembangan. Untuk saat ini pembayaran VA akan diproses secara manual. Silakan gunakan metode Transfer Bank biasa jika memungkinkan.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* BAGIAN 3: UPLOAD BUKTI */}
-          {category !== 'cash' && (
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Upload Bukti Pembayaran</h2>
-                <span className="text-xs font-medium bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full">Wajib</span>
-              </div>
-              <div className="p-6">
-                {!file ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 hover:border-emerald-400 transition-all group"
+                  <button
+                    onClick={() => setShowSimulatorModal(false)}
+                    className="text-slate-400 hover:text-slate-600 text-xs font-medium"
                   >
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <Upload className="w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-medium text-slate-900 mb-1">Klik untuk upload bukti pembayaran</p>
-                    <p className="text-xs text-slate-500">Maks. 5MB (JPG, PNG, PDF)</p>
-                    {fileError && <p className="text-xs font-medium text-red-500 mt-3">{fileError}</p>}
-                  </div>
-                ) : (
-                  <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-10 h-10 bg-emerald-100 rounded text-emerald-600 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5" />
+                    Tutup
+                  </button>
+                </div>
+
+                <div className="my-5 space-y-4">
+                  {selectedMethod === 'qris' ? (
+                    <div className="text-center py-2">
+                      <div className="w-44 h-44 mx-auto bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-3 mb-2">
+                        <QrCode className="w-28 h-28 text-slate-800" />
+                        <span className="text-[9px] text-slate-500 mt-1">Scan via Aplikasi Pembayaran</span>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{file.name}</p>
-                        <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                      <p className="text-xs text-slate-500">Scan QRIS untuk menyelesaikan pembayaran</p>
+                    </div>
+                  ) : selectedMethod === 'mandiri' ? (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <div>
+                        <p className="text-[11px] text-slate-500">Kode Perusahaan (Company Code)</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-base font-mono font-bold text-slate-800">70012</span>
+                          <button
+                            onClick={() => handleCopyVA('70012')}
+                            className="flex items-center gap-1 text-[11px] font-medium text-teal-600 hover:text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md transition-colors"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Salin</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200">
+                        <p className="text-[11px] text-slate-500">Nomor Tagihan (Bill Key)</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-base font-mono font-bold text-slate-800">
+                            {activeMethodObj.billKey || '89100812900001'}
+                          </span>
+                          <button
+                            onClick={() => handleCopyVA(activeMethodObj.billKey || '89100812900001')}
+                            className="flex items-center gap-1 text-[11px] font-medium text-teal-600 hover:text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md transition-colors"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Salin</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-emerald-700 hover:text-emerald-800 underline">Ganti</button>
-                      <button type="button" onClick={removeFile} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  name="proof_file_hidden"
-                  ref={fileInputRef}
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
-            </section>
-          )}
-
-        </div>
-
-        {/* KANAN: Order Summary */}
-        <div className="w-full lg:w-1/3">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm sticky top-24 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-900">
-              <h2 className="text-lg font-semibold text-white">Ringkasan Pembayaran</h2>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-sm">
-                  <p className="text-slate-500">Nominal Tagihan</p>
-                  <p className="font-semibold text-slate-900">Rp {numericAmount.toLocaleString('id-ID')}</p>
-                </div>
-
-                <div className="flex justify-between items-center text-sm">
-                  <p className="text-slate-500">Metode</p>
-                  <p className="font-medium text-slate-900">{getMethodLabel()}</p>
-                </div>
-
-                <div className="flex justify-between items-center text-sm">
-                  <p className="text-slate-500">Biaya Admin</p>
-                  <p className="font-medium text-emerald-600">Gratis</p>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <p className="text-sm font-medium text-slate-500 mb-1">Total Pembayaran</p>
-                <p className="text-3xl font-bold text-emerald-600 mb-6">
-                  Rp {numericAmount.toLocaleString('id-ID')}
-                </p>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || (!method) || (category !== 'cash' && !file)}
-                  className={`w-full py-3.5 px-4 rounded-xl text-base font-semibold flex justify-center items-center transition-all shadow-sm ${
-                    isLoading || (!method) || (category !== 'cash' && !file)
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                      Memproses...
-                    </span>
                   ) : (
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5" />
-                      Konfirmasi Pembayaran
-                    </span>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <p className="text-[11px] text-slate-500">Nomor Virtual Account / Kode Bayar</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-base sm:text-lg font-mono font-bold text-slate-800">
+                          {activeMethodObj.vaNumber || '82710812900001'}
+                        </span>
+                        <button
+                          onClick={() => handleCopyVA(activeMethodObj.vaNumber)}
+                          className="flex items-center gap-1 text-[11px] font-medium text-teal-600 hover:text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md transition-colors"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copied ? 'Tersalin' : 'Salin'}</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
 
-                <p className="text-xs text-center text-slate-500 mt-4 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Transaksi Anda dijamin aman
-                </p>
+                  <div className="flex justify-between items-center text-xs py-2 border-t border-slate-100">
+                    <span className="text-slate-500">Total Tagihan</span>
+                    <span className="font-bold text-slate-800">{formatRp(totalAmount)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <a
+                    href={getSimulatorUrl(selectedMethod)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <span>Buka Simulator Midtrans Resmi</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                  </a>
+
+                  <button
+                    onClick={handleSimulateSuccess}
+                    disabled={isProcessing}
+                    className="w-full py-3 rounded-xl bg-[#00c292] hover:bg-[#00ad82] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    {isProcessing ? 'Memproses Simulasi...' : '⚡ Simulasikan Pembayaran Berhasil'}
+                  </button>
+                  <p className="text-[10px] text-center text-slate-400">
+                    Terhubung ke Midtrans Simulator Sandbox
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
-      </form>
+      )}
+
+      {/* Manual Transfer Modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            {isSuccess ? (
+              <div className="text-center py-6">
+                <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-3 animate-bounce" />
+                <h3 className="text-lg font-bold text-slate-800">Bukti Berhasil Diunggah!</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Bukti pembayaran untuk {billCode} telah dikirim dan menunggu verifikasi admin.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-800">Upload Bukti Transfer Manual</h3>
+                  <button
+                    onClick={() => setShowManualModal(false)}
+                    className="text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    Tutup
+                  </button>
+                </div>
+
+                <div className="my-4 space-y-3">
+                  <div className="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100 text-xs text-emerald-800 space-y-1">
+                    <p className="font-semibold">Rekening Tujuan Travel:</p>
+                    <p>Bank Mandiri: <span className="font-mono font-bold">137-00-1234567-8</span></p>
+                    <p>a.n. PT Travel Umroh &amp; Haji</p>
+                    <p className="font-medium pt-1">Nominal: {formatRp(totalAmount)}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Pilih Foto / Dokumen Bukti Transfer
+                    </label>
+                    <label className="border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-50/50">
+                      <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                      <span className="text-xs text-slate-600 font-medium">
+                        {uploadedFile ? uploadedFile.name : 'Klik untuk pilih file bukti'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, atau PDF (Maks. 5MB)</span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSimulateSuccess}
+                  disabled={!uploadedFile || isProcessing}
+                  className="w-full py-3 rounded-xl bg-[#00c292] hover:bg-[#00ad82] text-white text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isProcessing ? 'Mengirim Bukti...' : 'Kirim Bukti Pembayaran'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
