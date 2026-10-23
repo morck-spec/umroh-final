@@ -17,7 +17,7 @@
     "role": "Super Admin",
     "branch": "Kantor Pusat Jakarta",
     "status": "Aktif",
-    "last_login": "16 Oct 2026 00:15",
+    "last_login": "20 Oct 2026 13:25",
     "phone": "",
     "is_active": true
   },
@@ -50,7 +50,7 @@
     "role": "Admin Cabang",
     "branch": "cabang jember",
     "status": "Aktif",
-    "last_login": "15 Oct 2026 21:33",
+    "last_login": "20 Oct 2026 15:48",
     "phone": "",
     "is_active": true
   },
@@ -94,7 +94,7 @@
     "role": "Jamaah",
     "branch": "Kantor Pusat Jakarta",
     "status": "Aktif",
-    "last_login": "16 Oct 2026 00:28",
+    "last_login": "20 Oct 2026 13:31",
     "phone": "",
     "is_active": true
   },
@@ -116,7 +116,18 @@
     "role": "Jamaah",
     "branch": "Kantor Pusat Jakarta",
     "status": "Aktif",
-    "last_login": "16 Oct 2026 01:20",
+    "last_login": "16 Oct 2026 15:51",
+    "phone": "",
+    "is_active": true
+  },
+  {
+    "id": "2a75dfcb-1e32-45a5-a499-7092b45f3adc",
+    "name": "Ustadz Abdul",
+    "email": "muthawif@example.com",
+    "role": "Jamaah",
+    "branch": "Kantor Pusat Jakarta",
+    "status": "Aktif",
+    "last_login": "-",
     "phone": "",
     "is_active": true
   },

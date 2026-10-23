@@ -11,16 +11,19 @@ import {
   updatePilgrimDocStatus,
   uploadPilgrimDocFile,
   deletePilgrimDoc,
+  getSignedUrl,
 } from '@/app/dashboard/shared/actions/documents';
 
 interface Props {
   pilgrim: PilgrimWithDocs;
   backHref?: string;
+  isJamaah?: boolean;
 }
 
 export default function PilgrimDocumentsDetailClient({
   pilgrim: initialPilgrim,
   backHref = '/dashboard/superadmin/documents',
+  isJamaah = false,
 }: Props) {
   const router = useRouter();
   const [pilgrim, setPilgrim] = useState<PilgrimWithDocs>(initialPilgrim);
@@ -113,15 +116,32 @@ export default function PilgrimDocumentsDetailClient({
     });
   }
 
+  async function handleDownload(doc: PilgrimDocument) {
+    if (doc.file_url) {
+      if (doc.file_url.startsWith('http') || doc.file_url.startsWith('/')) {
+        window.open(doc.file_url, '_blank');
+        return;
+      }
+      try {
+        const url = await getSignedUrl(doc.file_url);
+        if (url) {
+          window.open(url, '_blank');
+          return;
+        }
+      } catch {}
+    }
+    alert(`Membuka berkas: ${doc.file_name || doc.label}`);
+  }
+
   return (
     <div>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
-        <Link href="/dashboard/superadmin" className="hover:text-slate-600 transition-colors">
+        <Link href={isJamaah ? '/dashboard/jamaah' : '/dashboard/superadmin'} className="hover:text-slate-600 transition-colors">
           Beranda
         </Link>
         <span>&rsaquo;</span>
-        <Link href={backHref} className="hover:text-slate-600 transition-colors">
+        <Link href={isJamaah ? '/dashboard/jamaah/documents' : backHref} className="hover:text-slate-600 transition-colors">
           Dokumen
         </Link>
         <span>&rsaquo;</span>
@@ -219,7 +239,7 @@ export default function PilgrimDocumentsDetailClient({
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            alert(`Membuka berkas: ${doc.file_name}`);
+                            handleDownload(doc);
                           }}
                           className="inline-flex items-center gap-1.5 text-xs text-[#0D9488] hover:underline font-medium"
                         >
@@ -251,43 +271,46 @@ export default function PilgrimDocumentsDetailClient({
                           </button>
                         </form>
 
-                        {/* Status Verification dropdown */}
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={selectedStatuses[doc.id] || doc.status}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                doc.id,
-                                e.target.value as 'Terverifikasi' | 'Sudah Diunggah' | 'Belum Diunggah' | 'Ditolak'
-                              )
-                            }
-                            className="text-xs rounded border border-slate-300 py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#0D9488]"
-                          >
-                            <option value="Terverifikasi">Terverifikasi</option>
-                            <option value="Sudah Diunggah">Sudah Diunggah</option>
-                            <option value="Belum Diunggah">Belum Diunggah</option>
-                            <option value="Ditolak">Ditolak</option>
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleApplyStatus(doc.id)}
-                            disabled={isPending}
-                            className="text-xs px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium transition-colors"
-                          >
-                            Set
-                          </button>
-                        </div>
+                        {/* Status Verification dropdown and Delete action (Staff only, hidden for Jamaah) */}
+                        {!isJamaah && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={selectedStatuses[doc.id] || doc.status}
+                                onChange={(e) =>
+                                  handleStatusChange(
+                                    doc.id,
+                                    e.target.value as 'Terverifikasi' | 'Sudah Diunggah' | 'Belum Diunggah' | 'Ditolak'
+                                  )
+                                }
+                                className="text-xs rounded border border-slate-300 py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#0D9488]"
+                              >
+                                <option value="Terverifikasi">Terverifikasi</option>
+                                <option value="Sudah Diunggah">Sudah Diunggah</option>
+                                <option value="Belum Diunggah">Belum Diunggah</option>
+                                <option value="Ditolak">Ditolak</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyStatus(doc.id)}
+                                disabled={isPending}
+                                className="text-xs px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium transition-colors"
+                              >
+                                Set
+                              </button>
+                            </div>
 
-                        {/* Delete action */}
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(doc.id, doc.label)}
-                            className="text-red-500 hover:underline text-xs font-medium"
-                          >
-                            Hapus
-                          </button>
-                        </div>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(doc.id, doc.label)}
+                                className="text-red-500 hover:underline text-xs font-medium"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

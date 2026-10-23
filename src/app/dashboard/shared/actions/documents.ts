@@ -63,8 +63,9 @@ const standardChecklist = [
   { type: 'KTP', label: 'KTP' },
   { type: 'KK', label: 'Kartu Keluarga' },
   { type: 'PASPOR', label: 'Paspor' },
-  { type: 'VISA', label: 'Visa' },
-  { type: 'BUKU_KUNING', label: 'Sertifikat Vaksin Meningitis (Buku Kuning)' },
+  { type: 'FOTO', label: 'Pas Foto 4x6 (latar putih)' },
+  { type: 'BUKU_NIKAH', label: 'Buku Nikah / Akta Lahir' },
+  { type: 'BUKU_KUNING', label: 'Sertifikat Vaksin Meningitis' },
 ];
 
 export async function getPilgrimDocumentsList(q = ''): Promise<PilgrimWithDocs[]> {
@@ -166,8 +167,25 @@ export async function getPilgrimDetail(idOrCode: string): Promise<PilgrimWithDoc
 }
 
 export async function seedStandardChecklist(pilgrimId: string): Promise<{ success: boolean; error?: string }> {
+  const data = readData();
+  const pilgrim = data.pilgrims.find((p) => p.id === pilgrimId || p.legacy_id === pilgrimId);
+  if (pilgrim) {
+    if (!pilgrim.documents || pilgrim.documents.length === 0) {
+      pilgrim.documents = standardChecklist.map((item, idx) => ({
+        id: `doc-${pilgrim.id}-${idx + 1}`,
+        label: item.label,
+        status: 'Belum Diunggah' as const,
+        verified_at: null,
+        file_name: null,
+        note: null,
+      }));
+      writeData(data);
+    }
+  }
+
   revalidatePath('/dashboard', 'layout');
   revalidatePath(`/dashboard/superadmin/documents/${pilgrimId}`);
+  revalidatePath('/dashboard/jamaah/documents');
   return { success: true };
 }
 
@@ -227,6 +245,7 @@ export async function updatePilgrimDocStatus(
 
   revalidatePath('/dashboard', 'layout');
   revalidatePath(`/dashboard/superadmin/documents/${pilgrimId}`);
+  revalidatePath('/dashboard/jamaah/documents');
   return { success: true };
 }
 
@@ -302,6 +321,7 @@ export async function uploadPilgrimDocFile(
 
   revalidatePath('/dashboard', 'layout');
   revalidatePath(`/dashboard/superadmin/documents/${pilgrimId}`);
+  revalidatePath('/dashboard/jamaah/documents');
   return { success: true, file_name: file.name };
 }
 
@@ -327,6 +347,7 @@ export async function deletePilgrimDoc(
 
   revalidatePath('/dashboard', 'layout');
   revalidatePath(`/dashboard/superadmin/documents/${pilgrimId}`);
+  revalidatePath('/dashboard/jamaah/documents');
   return { success: true };
 }
 

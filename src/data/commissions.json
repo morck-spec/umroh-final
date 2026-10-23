@@ -8,18 +8,7 @@
     "base_amount": 36500000,
     "rate": 6,
     "commission_amount": 2190000,
-    "status": "Menunggu"
-  },
-  {
-    "id": "ccb5c1b0-2491-4af0-8171-bb8014a48f4f",
-    "legacy_id": "2",
-    "agent_name": "Siti Aminah",
-    "jamaah_name": "Kartika Sari",
-    "package_name": "Umroh Reguler 9 Hari",
-    "base_amount": 28500000,
-    "rate": 5,
-    "commission_amount": 1425000,
-    "status": "Dibayar"
+    "status": "Disetujui"
   },
   {
     "id": "8249742e-3237-4e52-9d8a-0e734e85e9f3",
@@ -86,6 +75,17 @@
     "rate": 6,
     "commission_amount": 1710000,
     "status": "Menunggu"
+  },
+  {
+    "id": "ccb5c1b0-2491-4af0-8171-bb8014a48f4f",
+    "legacy_id": "2",
+    "agent_name": "Siti Aminah",
+    "jamaah_name": "Kartika Sari",
+    "package_name": "Umroh Reguler 9 Hari",
+    "base_amount": 28500000,
+    "rate": 5,
+    "commission_amount": 1425000,
+    "status": "Dibayar"
   },
   {
     "id": "8f480851-1587-4601-a7d7-517a43c5ee53",
