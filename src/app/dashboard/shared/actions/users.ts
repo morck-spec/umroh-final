@@ -109,13 +109,6 @@ export async function getUserList(): Promise<UserItem[]> {
           };
         });
 
-        // Merge with local list to ensure all reference users are present
-        for (const loc of localList) {
-          if (!dbMapped.some((db) => db.id === loc.id || db.legacy_id === loc.id || db.name.toLowerCase() === loc.name.toLowerCase())) {
-            dbMapped.push(loc);
-          }
-        }
-
         writeData(dbMapped);
         return dbMapped;
       }

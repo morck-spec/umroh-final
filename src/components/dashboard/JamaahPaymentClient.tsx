@@ -92,23 +92,22 @@ export default function JamaahPaymentClient({ registration }: JamaahPaymentClien
   ];
 
   const reg = registration || {
-    id: '9',
-    code: 'REG-00009',
-    jamaah: { name: 'Ahmad Fauzi', passport: 'A1000001', phone: '081200000001' },
-    package: { id: 'pkg-3', name: 'Haji Plus Eksklusif', type: 'Haji Plus', price: 165000000, departure_date: '10 Apr 2027' },
-    status: 'Dikonfirmasi',
-    reg_date: '30 Jul 2026',
-    agent: 'Rahmat Hidayat',
-    guide: 'Ustadz Abdullah',
-    branch: 'Kantor Pusat Jakarta',
-    total_amount: 165000000,
+    id: '1',
+    code: 'REG-00001',
+    jamaah: { name: 'Ahmad Fauzi', passport: '-', phone: '-' },
+    package: { id: '', name: 'Paket Umroh', type: 'Umroh', price: 0, departure_date: '-' },
+    status: 'Pending',
+    reg_date: '-',
+    agent: '-',
+    guide: '-',
+    branch: '-',
+    total_amount: 0,
     paid_amount: 0,
-    remaining_amount: 165000000,
+    remaining_amount: 0,
     payment_status: 'Belum Bayar' as const,
-    bills: defaultBills,
+    bills: [],
   };
-
-  const bills = reg.bills && reg.bills.length > 0 ? reg.bills : defaultBills;
+  const bills = reg.bills || [];
 
   async function handleBayarSekarang(bill: BillItem) {
     setLoadingBillId(bill.id);

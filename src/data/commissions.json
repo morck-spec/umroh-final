@@ -1,14 +1,14 @@
 [
   {
-    "id": "3eb8d7eb-8de1-4b30-91c5-bf0f0f6279ac",
-    "legacy_id": "1",
-    "agent_name": "Rahmat Hidayat",
-    "jamaah_name": "Lukman Hakim",
-    "package_name": "Umroh Plus Turki 12 Hari",
-    "base_amount": 36500000,
+    "id": "24c9734b-49d1-4b57-9e49-926424c89095",
+    "legacy_id": "5",
+    "agent_name": "Rahmat",
+    "jamaah_name": "Fitri Handayani",
+    "package_name": "Umroh Reguler 9 Hari",
+    "base_amount": 28500000,
     "rate": 6,
-    "commission_amount": 2190000,
-    "status": "Disetujui"
+    "commission_amount": 1710000,
+    "status": "Menunggu"
   },
   {
     "id": "8249742e-3237-4e52-9d8a-0e734e85e9f3",
@@ -66,17 +66,6 @@
     "status": "Dibayar"
   },
   {
-    "id": "24c9734b-49d1-4b57-9e49-926424c89095",
-    "legacy_id": "5",
-    "agent_name": "Rahmat hidayat",
-    "jamaah_name": "Fitri Handayani",
-    "package_name": "Umroh Reguler 9 Hari",
-    "base_amount": 28500000,
-    "rate": 6,
-    "commission_amount": 1710000,
-    "status": "Menunggu"
-  },
-  {
     "id": "ccb5c1b0-2491-4af0-8171-bb8014a48f4f",
     "legacy_id": "2",
     "agent_name": "Siti Aminah",
@@ -86,6 +75,17 @@
     "rate": 5,
     "commission_amount": 1425000,
     "status": "Dibayar"
+  },
+  {
+    "id": "3eb8d7eb-8de1-4b30-91c5-bf0f0f6279ac",
+    "legacy_id": "1",
+    "agent_name": "Rahmat Hidayat",
+    "jamaah_name": "Lukman Hakim",
+    "package_name": "Umroh Plus Turki 12 Hari",
+    "base_amount": 36500000,
+    "rate": 6,
+    "commission_amount": 2190000,
+    "status": "Disetujui"
   },
   {
     "id": "8f480851-1587-4601-a7d7-517a43c5ee53",

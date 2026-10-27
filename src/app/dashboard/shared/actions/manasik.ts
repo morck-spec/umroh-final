@@ -71,7 +71,7 @@ function formatDate(dateStr: string): string {
 }
 
 export async function getManasikSchedules(): Promise<ManasikSchedule[]> {
-  const list = readData();
+  const local = readData();
 
   // Try to sync with Supabase if table exists
   try {
@@ -79,32 +79,37 @@ export async function getManasikSchedules(): Promise<ManasikSchedule[]> {
     if (supabase) {
       const { data: dbSchedules } = await supabase.from('manasik_schedules').select('*').order('date', { ascending: false });
       if (dbSchedules && dbSchedules.length > 0) {
-        // Merge or replace with DB schedules
-        for (const s of dbSchedules) {
-          if (!list.some((existing) => existing.id === s.id || existing.title === s.title)) {
-            list.push({
-              id: s.id,
-              title: s.title,
-              package_id: s.package_id,
-              package_name: s.package_name || 'Manasik Umum',
-              instructor: s.instructor || 'Ustadz',
-              date: s.date,
-              date_formatted: formatDate(s.date),
-              time_start: s.time_start?.slice(0, 5) || '08:00',
-              time_end: s.time_end?.slice(0, 5) || '12:00',
-              location: s.location || 'Aula Kantor Pusat Jakarta',
-              description: s.description || '',
-              attendances: [],
-            });
-          }
-        }
+        const result: ManasikSchedule[] = dbSchedules.map((s) => {
+          const match = local.find((l) => l.id === s.id || l.title === s.title);
+          const attendances = match?.attendances || [];
+          const total = attendances.length;
+          const hadir = attendances.filter((a) => a.status === 'Hadir').length;
+          return {
+            id: s.id,
+            title: s.title,
+            package_id: s.package_id,
+            package_name: s.package_name || 'Manasik Umum',
+            instructor: s.instructor || 'Ustadz',
+            date: s.date,
+            date_formatted: formatDate(s.date),
+            time_start: s.time_start?.slice(0, 5) || '08:00',
+            time_end: s.time_end?.slice(0, 5) || '12:00',
+            location: s.location || 'Aula Kantor Pusat Jakarta',
+            description: s.description || '',
+            attendances,
+            ratio: `${hadir} / ${total}`,
+          };
+        });
+
+        writeData(result);
+        return result;
       }
     }
   } catch (err) {
     // Supabase table might not exist yet, fallback smoothly
   }
 
-  return list.map((s) => {
+  return local.map((s) => {
     const total = s.attendances?.length || 0;
     const hadir = s.attendances?.filter((a) => a.status === 'Hadir').length || 0;
     return {
@@ -423,13 +428,21 @@ export async function saveManasikAttendance(
   try {
     const supabase = getServiceSupabase();
     if (supabase) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scheduleId);
       for (const item of attendances) {
-        await supabase.from('manasik_attendances').upsert({
-          schedule_legacy_id: scheduleId,
-          jamaah_name: item.jamaah_name,
-          status: item.status,
-          updated_at: new Date().toISOString(),
-        });
+        const query = supabase
+          .from('manasik_attendances')
+          .update({
+            status: item.status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('jamaah_name', item.jamaah_name);
+
+        if (isUuid) {
+          await query.eq('schedule_id', scheduleId);
+        } else {
+          await query.eq('schedule_legacy_id', scheduleId);
+        }
       }
     }
   } catch {}

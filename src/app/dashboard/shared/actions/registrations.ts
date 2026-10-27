@@ -25,62 +25,76 @@ function readData(): { registrations: RegistrationBilling[] } {
 }
 
 export async function getRegistrations() {
-  const data = readData();
-
-  // Try to sync/fetch any records from Supabase
+  // Fetch directly from Supabase as primary source of truth
   try {
     const supabase = await createClient();
-    const { data: dbData } = await supabase
+    const { data: dbData, error } = await supabase
       .from('registrations')
       .select(`
         *,
         jamaah(id, full_name, phone, branches(name)),
-        packages(id, name, price, departure_date)
+        packages(id, name, price, departure_date),
+        payments(id, amount, status, invoices(invoice_number))
       `)
       .order('created_at', { ascending: false });
 
-    if (dbData && dbData.length > 0) {
-      for (const item of dbData) {
-        if (!item.jamaah || !item.packages) continue;
-        const exists = data.registrations.some(
-          (r) => r.jamaah?.name?.toLowerCase() === item.jamaah?.full_name?.toLowerCase()
-        );
-        if (!exists) {
-          const num = data.registrations.length + 1;
-          data.registrations.push({
-            id: item.id,
-            code: `REG-${String(num).padStart(5, '0')}`,
-            jamaah: {
-              name: item.jamaah.full_name,
-              passport: 'A' + Math.floor(1000000 + Math.random() * 9000000),
-              phone: item.jamaah.phone || '-',
-            },
-            package: {
-              id: item.packages.id,
-              name: item.packages.name,
-              type: item.packages.name?.toLowerCase().includes('haji') ? 'Haji' : 'Umroh',
-              price: item.packages.price || 30000000,
-              departure_date: item.packages.departure_date ? new Date(item.packages.departure_date).toLocaleDateString('id-ID') : '10 Jan 2027',
-            },
-            status: item.status === 'approved' ? 'Dikonfirmasi' : item.status === 'cancelled' ? 'Batal' : 'Pending',
-            reg_date: new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            agent: 'Hasan Basri',
-            guide: 'Ustadz Abdullah',
-            branch: item.jamaah.branches?.name || 'Kantor Pusat Jakarta',
-            total_amount: item.packages.price || 30000000,
-            paid_amount: 0,
-            remaining_amount: item.packages.price || 30000000,
-            payment_status: 'Belum Bayar',
-            bills: [],
-          });
+    if (!error && dbData) {
+      return dbData.map((item: any, idx: number) => {
+        const pkgPrice = Number(item.packages?.price || 0);
+        const paidAmount = (item.payments || [])
+          .filter((p: any) => p.status === 'paid')
+          .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+        const remainingAmount = Math.max(0, pkgPrice - paidAmount);
+
+        let paymentStatus: 'Lunas' | 'Sebagian' | 'Belum Bayar' = 'Belum Bayar';
+        if (paidAmount >= pkgPrice && pkgPrice > 0) {
+          paymentStatus = 'Lunas';
+        } else if (paidAmount > 0) {
+          paymentStatus = 'Sebagian';
         }
-      }
+
+        let statusText = 'Pending';
+        if (item.status === 'approved') statusText = 'Dikonfirmasi';
+        else if (item.status === 'rejected' || item.status === 'cancelled') statusText = 'Batal';
+
+        // Dynamically derive code from database invoices or sequential format
+        let regCode = '';
+        for (const p of item.payments || []) {
+          for (const inv of p.invoices || []) {
+            const match = inv.invoice_number?.match(/REG-\d+/);
+            if (match) {
+              regCode = match[0];
+              break;
+            }
+          }
+          if (regCode) break;
+        }
+        if (!regCode) {
+          regCode = `REG-${String(dbData.length - idx).padStart(5, '0')}`;
+        }
+
+        return {
+          id: item.id,
+          code: regCode,
+          jamaah_name: item.jamaah?.full_name || 'Tanpa Nama',
+          package_name: item.packages?.name || 'Paket Umroh',
+          status: statusText,
+          payment_status: paymentStatus,
+          reg_date: item.created_at
+            ? new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '-',
+          total_amount: pkgPrice,
+          paid_amount: paidAmount,
+          remaining_amount: remainingAmount,
+        };
+      });
     }
   } catch (err) {
-    console.warn('Could not sync with Supabase registrations:', err);
+    console.warn('Could not fetch from Supabase registrations, falling back to local:', err);
   }
 
-  // Format list for table view matching Photo 1
+  // Fallback ONLY when Supabase connection completely fails
+  const data = readData();
   return data.registrations.map((r) => ({
     id: r.id,
     code: r.code,

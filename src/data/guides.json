@@ -1,21 +1,5 @@
 [
   {
-    "id": "b0baa24f-a470-4d57-a32b-3e1eff398754",
-    "code": "GD-DEMO1",
-    "name": "Ustadz Abdul",
-    "gender": "Laki-laki",
-    "phone": "089876540000",
-    "email": "muthawif@example.com",
-    "specialization": "Fiqih Manasik",
-    "branch": "Kantor Pusat Jakarta",
-    "is_active": true,
-    "status": "Aktif",
-    "bio": "10 tahun pembimbing haji & umroh",
-    "has_account": true,
-    "created_at": "2026-10-14T14:51:54.703655+00:00",
-    "updated_at": "2026-10-14T14:51:54.703655+00:00"
-  },
-  {
     "id": "43ef4604-e78e-411e-b365-d33aad6594ad",
     "code": "GD-DEMO2",
     "name": "Ustadz Fauzan",
@@ -46,5 +30,21 @@
     "has_account": false,
     "created_at": "2026-10-14T14:51:55.477912+00:00",
     "updated_at": "2026-10-14T14:51:55.477912+00:00"
+  },
+  {
+    "id": "b0baa24f-a470-4d57-a32b-3e1eff398754",
+    "code": "GD-DEMO1",
+    "name": "Ustadz Abdul",
+    "gender": "Laki-laki",
+    "phone": "089876540000",
+    "email": "muthawif@example.com",
+    "specialization": "Fiqih Manasik",
+    "branch": "Kantor Pusat Jakarta",
+    "is_active": true,
+    "status": "Aktif",
+    "bio": "10 tahun pembimbing haji & umroh",
+    "has_account": true,
+    "created_at": "2026-10-14T14:51:54.703655+00:00",
+    "updated_at": "2026-10-16T09:24:50.783+00:00"
   }
 ]

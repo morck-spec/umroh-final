@@ -1,816 +1,371 @@
 {
   "summary": {
-    "total_bills": 775000000,
-    "total_paid": 318333333,
-    "total_unpaid": 456666667,
-    "pending_verification": 0
+    "total_bills": 5970000000,
+    "total_paid": 755833333,
+    "total_unpaid": 5214166667,
+    "pending_verification": 3
   },
   "packages": [
     {
-      "id": "pkg-1",
+      "id": "23001800-b2cb-46e8-8ffa-6fc14aa1eb5b",
+      "name": "umroh ",
+      "type": "Umroh",
+      "price": 5500000000,
+      "departure_date": "2026-10-16",
+      "quota": 55
+    },
+    {
+      "id": "4cc85b01-738a-4d94-abc5-090d96f14e4e",
       "name": "Umroh Plus Turki 12 Hari",
       "type": "Umroh",
       "price": 36500000,
-      "departure_date": "10 Jan 2027",
+      "departure_date": "2027-01-10",
       "quota": 45
     },
     {
-      "id": "pkg-2",
+      "id": "41ae616a-c4ec-421f-9ca0-771a17be1a7a",
       "name": "Haji Khusus 2026",
       "type": "Haji",
       "price": 125000000,
-      "departure_date": "10 Feb 2027",
+      "departure_date": "2027-02-10",
       "quota": 30
     },
     {
-      "id": "pkg-3",
+      "id": "411878bc-52f2-4bbf-9beb-e8b4ce104bbb",
       "name": "Haji Plus Eksklusif",
-      "type": "Haji Plus",
+      "type": "Haji",
       "price": 140000000,
-      "departure_date": "10 Apr 2027",
+      "departure_date": "2027-04-10",
       "quota": 20
     },
     {
-      "id": "pkg-4",
-      "name": "Umroh Reguler 9 Hari",
+      "id": "e8fefa3d-0d83-441e-99b0-1fc0d5050eb1",
+      "name": "Umroh Reguler 10 Hari",
       "type": "Umroh",
       "price": 28500000,
-      "departure_date": "10 Dec 2026",
+      "departure_date": "2026-12-10",
       "quota": 50
-    },
-    {
-      "id": "pkg-5",
-      "name": "Umroh Akhir Tahun",
-      "type": "Umroh",
-      "price": 32000000,
-      "departure_date": "10 Nov 2026",
-      "quota": 48
     }
   ],
   "registrations": [
     {
-      "id": "12",
-      "code": "REG-00012",
-      "jamaah": {
-        "name": "Lukman Hakim",
-        "passport": "A1000011",
-        "phone": "081200000012"
-      },
-      "package": {
-        "id": "pkg-1",
-        "name": "Umroh Plus Turki 12 Hari",
-        "type": "Umroh",
-        "price": 36500000,
-        "departure_date": "10 Jan 2027"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "05 Nov 2026",
-      "agent": "Rahmat Hidayat",
-      "guide": "Ustadzah Khadijah",
-      "branch": "Kantor Pusat Jakarta",
-      "total_amount": 36500000,
-      "paid_amount": 0,
-      "remaining_amount": 36500000,
-      "payment_status": "Belum Bayar",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-12-dp",
-          "code": "REG-00012-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 7500000,
-          "paid": 0,
-          "remaining": 7500000,
-          "status": "Belum Bayar",
-          "due_date": "07 Nov 2026"
-        },
-        {
-          "id": "b-12-c1",
-          "code": "REG-00012-C1",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 0,
-          "remaining": 9666667,
-          "status": "Belum Bayar",
-          "due_date": "05 Dec 2026"
-        },
-        {
-          "id": "b-12-c2",
-          "code": "REG-00012-C2",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 0,
-          "remaining": 9666667,
-          "status": "Belum Bayar",
-          "due_date": "05 Jan 2027"
-        },
-        {
-          "id": "b-12-c3",
-          "code": "REG-00012-C3",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 0,
-          "remaining": 9666667,
-          "status": "Belum Bayar",
-          "due_date": "05 Feb 2027"
-        }
-      ]
-    },
-    {
-      "id": "11",
+      "id": "e8bd8675-54ca-443a-b602-d54c975705bd",
       "code": "REG-00011",
       "jamaah": {
-        "name": "Kartika Sari",
-        "passport": "A1000010",
+        "name": "Dewi Anggraini",
+        "passport": "320100000011",
         "phone": "081200000011"
       },
       "package": {
-        "id": "pkg-4",
-        "name": "Umroh Reguler 9 Hari",
-        "type": "Umroh",
-        "price": 28500000,
-        "departure_date": "10 Dec 2026"
+        "id": "411878bc-52f2-4bbf-9beb-e8b4ce104bbb",
+        "name": "Haji Plus Eksklusif",
+        "type": "Haji",
+        "price": 140000000,
+        "departure_date": "2027-04-10"
       },
       "status": "Dikonfirmasi",
-      "reg_date": "04 Oct 2026",
-      "agent": "Siti Aminah",
-      "guide": "Ustadz Abdullah",
+      "reg_date": "14/10/2026",
+      "agent": "Hasan Basri",
+      "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
-      "total_amount": 28500000,
-      "paid_amount": 14250000,
-      "remaining_amount": 14250000,
-      "payment_status": "Sebagian",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-11-dp",
-          "code": "REG-00011-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 8500000,
-          "paid": 8500000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "06 Oct 2026"
-        },
-        {
-          "id": "b-11-c1",
-          "code": "REG-00011-C1",
-          "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 5750000,
-          "remaining": 4250000,
-          "status": "Sebagian",
-          "due_date": "04 Nov 2026"
-        },
-        {
-          "id": "b-11-c2",
-          "code": "REG-00011-C2",
-          "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 0,
-          "remaining": 10000000,
-          "status": "Belum Bayar",
-          "due_date": "04 Dec 2026"
-        }
-      ]
+      "total_amount": 140000000,
+      "paid_amount": 0,
+      "remaining_amount": 140000000,
+      "payment_status": "Belum Bayar",
+      "bills": []
     },
     {
-      "id": "10",
+      "id": "8a0c4729-7dd7-40bc-8137-28a6851a8e7d",
       "code": "REG-00010",
       "jamaah": {
-        "name": "Joko Widodo",
-        "passport": "A1000009",
+        "name": "Siti Rahmawati",
+        "passport": "320100000010",
         "phone": "081200000010"
       },
       "package": {
-        "id": "pkg-5",
-        "name": "Umroh Akhir Tahun",
+        "id": "e8fefa3d-0d83-441e-99b0-1fc0d5050eb1",
+        "name": "Umroh Reguler 10 Hari",
         "type": "Umroh",
-        "price": 32000000,
-        "departure_date": "10 Nov 2026"
+        "price": 28500000,
+        "departure_date": "2026-12-10"
       },
       "status": "Dikonfirmasi",
-      "reg_date": "01 Sep 2026",
+      "reg_date": "14/10/2026",
       "agent": "Hasan Basri",
-      "guide": "Ustadz Fauzan",
+      "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
-      "total_amount": 32000000,
-      "paid_amount": 32000000,
-      "remaining_amount": 0,
-      "payment_status": "Lunas",
-      "notes": "",
+      "total_amount": 28500000,
+      "paid_amount": 20666667,
+      "remaining_amount": 7833333,
+      "payment_status": "Sebagian",
       "bills": [
         {
-          "id": "b-10-dp",
-          "code": "REG-00010-DP",
+          "id": "2f16a535-cc10-454f-ac6f-05c5139a379f",
+          "code": "REG-00010-P1",
           "type": "Uang Muka (DP)",
-          "amount": 8000000,
-          "paid": 8000000,
+          "amount": 5000000,
+          "paid": 5000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "03 Sep 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-10-c1",
-          "code": "REG-00010-C1",
+          "id": "113529ae-bdd0-45b8-b33b-1d95d7d920c3",
+          "code": "REG-00010-P2",
           "type": "Cicilan",
-          "amount": 12000000,
-          "paid": 12000000,
+          "amount": 7833333,
+          "paid": 7833333,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "01 Oct 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-10-c2",
-          "code": "REG-00010-C2",
+          "id": "58f174e3-2166-4a81-a8cb-8720c9350d53",
+          "code": "REG-00010-P3",
           "type": "Cicilan",
-          "amount": 12000000,
-          "paid": 12000000,
+          "amount": 7833334,
+          "paid": 7833334,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "01 Nov 2026"
+          "due_date": "14/10/2026"
         }
       ]
     },
     {
-      "id": "9",
+      "id": "d883d950-1402-48ad-a4c7-69dac92b86e6",
       "code": "REG-00009",
       "jamaah": {
-        "name": "Ahmad Fauzi",
-        "passport": "A1000001",
-        "phone": "081200000001"
+        "name": "Indra Kusuma",
+        "passport": "320100000009",
+        "phone": "081200000009"
       },
       "package": {
-        "id": "pkg-3",
+        "id": "411878bc-52f2-4bbf-9beb-e8b4ce104bbb",
         "name": "Haji Plus Eksklusif",
-        "type": "Haji Plus",
-        "price": 165000000,
-        "departure_date": "10 Apr 2027"
+        "type": "Haji",
+        "price": 140000000,
+        "departure_date": "2027-04-10"
       },
-      "status": "Dikonfirmasi",
-      "reg_date": "30 Jul 2026",
-      "agent": "Rahmat Hidayat",
-      "guide": "Ustadz Abdullah",
+      "status": "Pending",
+      "reg_date": "14/10/2026",
+      "agent": "Hasan Basri",
+      "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
-      "total_amount": 165000000,
-      "paid_amount": 78333333,
-      "remaining_amount": 86666667,
+      "total_amount": 140000000,
+      "paid_amount": 113333333,
+      "remaining_amount": 26666667,
       "payment_status": "Sebagian",
-      "notes": "",
       "bills": [
         {
-          "id": "33",
-          "code": "REG-00009-DP",
+          "id": "83975999-6b97-4c9b-8152-6a6935c44f9e",
+          "code": "REG-00009-P1",
           "type": "Uang Muka (DP)",
+          "amount": 30000000,
+          "paid": 0,
+          "remaining": 30000000,
+          "status": "Belum Bayar",
+          "due_date": "14/10/2026"
+        },
+        {
+          "id": "fb38d0bc-ba51-434d-9ada-a3f55bd8f759",
+          "code": "REG-00009-P2",
+          "type": "Cicilan",
+          "amount": 22000000,
+          "paid": 0,
+          "remaining": 22000000,
+          "status": "Belum Bayar",
+          "due_date": "14/10/2026"
+        },
+        {
+          "id": "499fd565-538c-451f-8f9f-575e7917a8da",
+          "code": "REG-00009-P3",
+          "type": "Cicilan",
           "amount": 35000000,
           "paid": 35000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "01 Aug 2026"
+          "due_date": "16/10/2026"
         },
         {
-          "id": "34",
-          "code": "REG-00009-C1",
+          "id": "eefffff8-6597-46fe-ae84-6a3b876ed4e1",
+          "code": "REG-00009-P4",
+          "type": "Cicilan",
+          "amount": 35000000,
+          "paid": 35000000,
+          "remaining": 0,
+          "status": "Lunas",
+          "due_date": "16/10/2026"
+        },
+        {
+          "id": "f08d4363-b8f6-4645-b872-75212110fdeb",
+          "code": "REG-00009-P5",
           "type": "Cicilan",
           "amount": 43333333,
           "paid": 43333333,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "30 Aug 2026"
-        },
-        {
-          "id": "35",
-          "code": "REG-00009-C2",
-          "type": "Cicilan",
-          "amount": 43333333,
-          "paid": 0,
-          "remaining": 43333333,
-          "status": "Belum Bayar",
-          "due_date": "30 Sep 2026"
-        },
-        {
-          "id": "36",
-          "code": "REG-00009-C3",
-          "type": "Cicilan",
-          "amount": 43333334,
-          "paid": 0,
-          "remaining": 43333334,
-          "status": "Belum Bayar",
-          "due_date": "30 Oct 2026"
+          "due_date": "16/10/2026"
         }
       ]
     },
     {
-      "id": "8",
+      "id": "32476a3a-c2b6-475e-976a-08e3e8d3393b",
       "code": "REG-00008",
       "jamaah": {
         "name": "Hesti Purnama",
-        "passport": "A1000007",
+        "passport": "320100000008",
         "phone": "081200000008"
       },
       "package": {
-        "id": "pkg-2",
+        "id": "41ae616a-c4ec-421f-9ca0-771a17be1a7a",
         "name": "Haji Khusus 2026",
         "type": "Haji",
         "price": 125000000,
-        "departure_date": "10 Feb 2027"
+        "departure_date": "2027-02-10"
       },
       "status": "Dikonfirmasi",
-      "reg_date": "28 Jun 2026",
+      "reg_date": "14/10/2026",
       "agent": "Hasan Basri",
       "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
       "total_amount": 125000000,
-      "paid_amount": 58333333,
-      "remaining_amount": 66666667,
+      "paid_amount": 45000000,
+      "remaining_amount": 80000000,
       "payment_status": "Sebagian",
-      "notes": "",
       "bills": [
         {
-          "id": "b-8-dp",
-          "code": "REG-00008-DP",
+          "id": "a70d41ce-8c9e-4b19-9111-fd91ef60792a",
+          "code": "REG-00008-P1",
           "type": "Uang Muka (DP)",
           "amount": 25000000,
           "paid": 25000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "30 Jun 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-8-c1",
-          "code": "REG-00008-C1",
+          "id": "4350f4da-3d1a-4881-af44-64ca1c1b277e",
+          "code": "REG-00008-P2",
           "type": "Cicilan",
-          "amount": 33333333,
-          "paid": 33333333,
+          "amount": 20000000,
+          "paid": 20000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "28 Jul 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-8-c2",
-          "code": "REG-00008-C2",
+          "id": "3c342327-a13b-4032-9b4a-e893b8fee563",
+          "code": "REG-00008-P3",
           "type": "Cicilan",
-          "amount": 33333333,
+          "amount": 20000000,
           "paid": 0,
-          "remaining": 33333333,
+          "remaining": 20000000,
           "status": "Belum Bayar",
-          "due_date": "28 Aug 2026"
-        },
-        {
-          "id": "b-8-c3",
-          "code": "REG-00008-C3",
-          "type": "Cicilan",
-          "amount": 33333334,
-          "paid": 0,
-          "remaining": 33333334,
-          "status": "Belum Bayar",
-          "due_date": "28 Sep 2026"
+          "due_date": "14/10/2026"
         }
       ]
     },
     {
-      "id": "7",
+      "id": "f905c503-05b8-49ab-b225-0c3cd1a8673a",
       "code": "REG-00007",
       "jamaah": {
         "name": "Gunawan Wibowo",
-        "passport": "A1000006",
+        "passport": "320100000007",
         "phone": "081200000007"
       },
       "package": {
-        "id": "pkg-1",
+        "id": "4cc85b01-738a-4d94-abc5-090d96f14e4e",
         "name": "Umroh Plus Turki 12 Hari",
         "type": "Umroh",
         "price": 36500000,
-        "departure_date": "10 Jan 2027"
+        "departure_date": "2027-01-10"
       },
       "status": "Dikonfirmasi",
-      "reg_date": "26 May 2026",
+      "reg_date": "14/10/2026",
       "agent": "Hasan Basri",
-      "guide": "Ustadz Abdullah",
+      "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
       "total_amount": 36500000,
-      "paid_amount": 36500000,
-      "remaining_amount": 0,
-      "payment_status": "Lunas",
-      "notes": "",
+      "paid_amount": 26833333,
+      "remaining_amount": 9666667,
+      "payment_status": "Sebagian",
       "bills": [
         {
-          "id": "b-7-dp",
-          "code": "REG-00007-DP",
+          "id": "0aa7a95c-f023-4607-801b-6e9d1df1cfc3",
+          "code": "REG-00007-P1",
           "type": "Uang Muka (DP)",
           "amount": 7500000,
           "paid": 7500000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "28 May 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-7-c1",
-          "code": "REG-00007-C1",
+          "id": "e7152183-ee90-44a3-8b34-e96d440abdab",
+          "code": "REG-00007-P2",
           "type": "Cicilan",
           "amount": 9666667,
           "paid": 9666667,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "26 Jun 2026"
+          "due_date": "14/10/2026"
         },
         {
-          "id": "b-7-c2",
-          "code": "REG-00007-C2",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 9666667,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "26 Jul 2026"
-        },
-        {
-          "id": "b-7-c3",
-          "code": "REG-00007-C3",
+          "id": "89a5ed29-7e84-4913-89fe-9f308ceec889",
+          "code": "REG-00007-P3",
           "type": "Cicilan",
           "amount": 9666666,
           "paid": 9666666,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "26 Aug 2026"
+          "due_date": "14/10/2026"
         }
       ]
     },
     {
-      "id": "6",
-      "code": "REG-00006",
-      "jamaah": {
-        "name": "Fitri Handayani",
-        "passport": "A1000005",
-        "phone": "081200000006"
-      },
-      "package": {
-        "id": "pkg-4",
-        "name": "Umroh Reguler 9 Hari",
-        "type": "Umroh",
-        "price": 28500000,
-        "departure_date": "10 Dec 2026"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "24 Apr 2026",
-      "agent": "Siti Aminah",
-      "guide": "Ustadz Fauzan",
-      "branch": "Kantor Pusat Jakarta",
-      "total_amount": 28500000,
-      "paid_amount": 0,
-      "remaining_amount": 28500000,
-      "payment_status": "Belum Bayar",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-6-dp",
-          "code": "REG-00006-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 8500000,
-          "paid": 0,
-          "remaining": 8500000,
-          "status": "Belum Bayar",
-          "due_date": "26 Apr 2026"
-        },
-        {
-          "id": "b-6-c1",
-          "code": "REG-00006-C1",
-          "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 0,
-          "remaining": 10000000,
-          "status": "Belum Bayar",
-          "due_date": "24 May 2026"
-        },
-        {
-          "id": "b-6-c2",
-          "code": "REG-00006-C2",
-          "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 0,
-          "remaining": 10000000,
-          "status": "Belum Bayar",
-          "due_date": "24 Jun 2026"
-        }
-      ]
-    },
-    {
-      "id": "5",
-      "code": "REG-00005",
-      "jamaah": {
-        "name": "Eko Prasetyo",
-        "passport": "A1000004",
-        "phone": "081200000005"
-      },
-      "package": {
-        "id": "pkg-5",
-        "name": "Umroh Akhir Tahun",
-        "type": "Umroh",
-        "price": 32000000,
-        "departure_date": "10 Nov 2026"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "22 Mar 2026",
-      "agent": "Hasan Basri",
-      "guide": "Ustadz Abdullah",
-      "branch": "Kantor Pusat Jakarta",
-      "total_amount": 32000000,
-      "paid_amount": 16000000,
-      "remaining_amount": 16000000,
-      "payment_status": "Sebagian",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-5-dp",
-          "code": "REG-00005-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 8000000,
-          "paid": 8000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "24 Mar 2026"
-        },
-        {
-          "id": "b-5-c1",
-          "code": "REG-00005-C1",
-          "type": "Cicilan",
-          "amount": 12000000,
-          "paid": 8000000,
-          "remaining": 4000000,
-          "status": "Sebagian",
-          "due_date": "22 Apr 2026"
-        },
-        {
-          "id": "b-5-c2",
-          "code": "REG-00005-C2",
-          "type": "Cicilan",
-          "amount": 12000000,
-          "paid": 0,
-          "remaining": 12000000,
-          "status": "Belum Bayar",
-          "due_date": "22 May 2026"
-        }
-      ]
-    },
-    {
-      "id": "4",
-      "code": "REG-00004",
-      "jamaah": {
-        "name": "Dewi Anggraini",
-        "passport": "A1000003",
-        "phone": "081200000004"
-      },
-      "package": {
-        "id": "pkg-3",
-        "name": "Haji Plus Eksklusif",
-        "type": "Haji Plus",
-        "price": 140000000,
-        "departure_date": "10 Apr 2027"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "20 Feb 2026",
-      "agent": "Hasan Basri",
-      "guide": "Ustadzah Khadijah",
-      "branch": "Kantor Pusat Jakarta",
-      "total_amount": 140000000,
-      "paid_amount": 140000000,
-      "remaining_amount": 0,
-      "payment_status": "Lunas",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-4-dp",
-          "code": "REG-00004-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 35000000,
-          "paid": 35000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "22 Feb 2026"
-        },
-        {
-          "id": "b-4-c1",
-          "code": "REG-00004-C1",
-          "type": "Cicilan",
-          "amount": 35000000,
-          "paid": 35000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "20 Mar 2026"
-        },
-        {
-          "id": "b-4-c2",
-          "code": "REG-00004-C2",
-          "type": "Cicilan",
-          "amount": 35000000,
-          "paid": 35000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "20 Apr 2026"
-        },
-        {
-          "id": "b-4-c3",
-          "code": "REG-00004-C3",
-          "type": "Cicilan",
-          "amount": 35000000,
-          "paid": 35000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "20 May 2026"
-        }
-      ]
-    },
-    {
-      "id": "3",
-      "code": "REG-00003",
-      "jamaah": {
-        "name": "Citra Lestari",
-        "passport": "A1000002",
-        "phone": "081200000003"
-      },
-      "package": {
-        "id": "pkg-2",
-        "name": "Haji Khusus 2026",
-        "type": "Haji",
-        "price": 125000000,
-        "departure_date": "10 Feb 2027"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "18 Jan 2026",
-      "agent": "Rahmat Hidayat",
-      "guide": "Ustadz Abdullah",
-      "branch": "Kantor Pusat Jakarta",
-      "total_amount": 125000000,
-      "paid_amount": 0,
-      "remaining_amount": 125000000,
-      "payment_status": "Belum Bayar",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-3-dp",
-          "code": "REG-00003-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 25000000,
-          "paid": 0,
-          "remaining": 25000000,
-          "status": "Belum Bayar",
-          "due_date": "20 Jan 2026"
-        },
-        {
-          "id": "b-3-c1",
-          "code": "REG-00003-C1",
-          "type": "Cicilan",
-          "amount": 33333333,
-          "paid": 0,
-          "remaining": 33333333,
-          "status": "Belum Bayar",
-          "due_date": "18 Feb 2026"
-        },
-        {
-          "id": "b-3-c2",
-          "code": "REG-00003-C2",
-          "type": "Cicilan",
-          "amount": 33333333,
-          "paid": 0,
-          "remaining": 33333333,
-          "status": "Belum Bayar",
-          "due_date": "18 Mar 2026"
-        },
-        {
-          "id": "b-3-c3",
-          "code": "REG-00003-C3",
-          "type": "Cicilan",
-          "amount": 33333334,
-          "paid": 0,
-          "remaining": 33333334,
-          "status": "Belum Bayar",
-          "due_date": "18 Apr 2026"
-        }
-      ]
-    },
-    {
-      "id": "2",
-      "code": "REG-00002",
-      "jamaah": {
-        "name": "Budi Santoso",
-        "passport": "A1000001",
-        "phone": "081200000002"
-      },
-      "package": {
-        "id": "pkg-1",
-        "name": "Umroh Plus Turki 12 Hari",
-        "type": "Umroh",
-        "price": 36500000,
-        "departure_date": "10 Jan 2027"
-      },
-      "status": "Dikonfirmasi",
-      "reg_date": "16 Dec 2025",
-      "agent": "Siti Aminah",
-      "guide": "Ustadz Fauzan",
-      "branch": "cabang jember",
-      "total_amount": 36500000,
-      "paid_amount": 18250000,
-      "remaining_amount": 18250000,
-      "payment_status": "Sebagian",
-      "notes": "",
-      "bills": [
-        {
-          "id": "b-2-dp",
-          "code": "REG-00002-DP",
-          "type": "Uang Muka (DP)",
-          "amount": 7500000,
-          "paid": 7500000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "18 Dec 2025"
-        },
-        {
-          "id": "b-2-c1",
-          "code": "REG-00002-C1",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 9666667,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "16 Jan 2026"
-        },
-        {
-          "id": "b-2-c2",
-          "code": "REG-00002-C2",
-          "type": "Cicilan",
-          "amount": 9666667,
-          "paid": 1083333,
-          "remaining": 8583334,
-          "status": "Sebagian",
-          "due_date": "16 Feb 2026"
-        },
-        {
-          "id": "b-2-c3",
-          "code": "REG-00002-C3",
-          "type": "Cicilan",
-          "amount": 9666666,
-          "paid": 0,
-          "remaining": 9666666,
-          "status": "Belum Bayar",
-          "due_date": "16 Mar 2026"
-        }
-      ]
-    },
-    {
-      "id": "1",
+      "id": "2aca420f-7b0b-4fc8-86d7-2879832083d6",
       "code": "REG-00001",
       "jamaah": {
         "name": "Ahmad Fauzi",
-        "passport": "A1000000",
-        "phone": "081200000001"
+        "passport": "-",
+        "phone": "-"
       },
       "package": {
-        "id": "pkg-4",
-        "name": "Umroh Reguler 9 Hari",
+        "id": "23001800-b2cb-46e8-8ffa-6fc14aa1eb5b",
+        "name": "umroh ",
         "type": "Umroh",
-        "price": 28500000,
-        "departure_date": "10 Dec 2026"
+        "price": 5500000000,
+        "departure_date": "2026-10-16"
       },
       "status": "Dikonfirmasi",
-      "reg_date": "14 Nov 2025",
+      "reg_date": "08/10/2026",
       "agent": "Hasan Basri",
-      "guide": "Ustadz Abdullah",
+      "guide": "Ustadzah Khadijah",
       "branch": "Kantor Pusat Jakarta",
-      "total_amount": 28500000,
-      "paid_amount": 28500000,
-      "remaining_amount": 0,
-      "payment_status": "Lunas",
-      "notes": "",
+      "total_amount": 5500000000,
+      "paid_amount": 550000000,
+      "remaining_amount": 4950000000,
+      "payment_status": "Sebagian",
       "bills": [
         {
-          "id": "b-1-dp",
-          "code": "REG-00001-DP",
+          "id": "7e5782fa-4d7e-47e8-9d01-c278a8fbfdf1",
+          "code": "REG-00001-P1",
           "type": "Uang Muka (DP)",
-          "amount": 8500000,
-          "paid": 8500000,
+          "amount": 55000000,
+          "paid": 55000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "16 Nov 2025"
+          "due_date": "08/10/2026"
         },
         {
-          "id": "b-1-c1",
-          "code": "REG-00001-C1",
+          "id": "f075e059-700c-4b6f-adf5-47115f9a0dab",
+          "code": "REG-00001-P2",
           "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 10000000,
+          "amount": 495000000,
+          "paid": 495000000,
           "remaining": 0,
           "status": "Lunas",
-          "due_date": "14 Dec 2025"
-        },
-        {
-          "id": "b-1-c2",
-          "code": "REG-00001-C2",
-          "type": "Cicilan",
-          "amount": 10000000,
-          "paid": 10000000,
-          "remaining": 0,
-          "status": "Lunas",
-          "due_date": "14 Jan 2026"
+          "due_date": "09/10/2026"
         }
       ]
     }

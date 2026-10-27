@@ -92,53 +92,29 @@ export async function getGuides(): Promise<GuideItem[]> {
       return local;
     }
 
-    let modified = false;
-    const merged = [...local];
+    const result: GuideItem[] = dbGuides.map((dbG: any, idx: number) => {
+      const match = local.find((m) => m.id === dbG.id || m.name?.toLowerCase() === dbG.name?.toLowerCase());
+      return {
+        id: dbG.id,
+        code: match?.code || `GD-${String(idx + 1).padStart(3, '0')}`,
+        name: dbG.name,
+        gender: match?.gender || (dbG.name?.toLowerCase().includes('khadijah') ? 'Perempuan' : 'Laki-laki'),
+        phone: dbG.phone || match?.phone || '',
+        email: match?.email || `${dbG.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@example.com`,
+        specialization: match?.specialization || 'Fiqih Manasik',
+        branch: match?.branch || 'Kantor Pusat Jakarta',
+        branch_id: match?.branch_id,
+        is_active: match?.is_active ?? true,
+        status: (match?.status || 'Aktif') as 'Aktif' | 'Nonaktif',
+        bio: dbG.experience || match?.bio || '',
+        has_account: match?.has_account ?? false,
+        created_at: dbG.created_at,
+        updated_at: dbG.updated_at,
+      };
+    });
 
-    for (const dbG of dbGuides) {
-      const idx = merged.findIndex((m) => m.id === dbG.id);
-      if (idx >= 0) {
-        // sync basic fields
-        if (dbG.name && merged[idx].name !== dbG.name) {
-          merged[idx].name = dbG.name;
-          modified = true;
-        }
-        if (dbG.phone && merged[idx].phone !== dbG.phone) {
-          merged[idx].phone = dbG.phone;
-          modified = true;
-        }
-        if (dbG.experience && merged[idx].bio !== dbG.experience) {
-          merged[idx].bio = dbG.experience;
-          modified = true;
-        }
-      } else {
-        // new item from database
-        const newGuide: GuideItem = {
-          id: dbG.id,
-          code: generateGuideCode(merged),
-          name: dbG.name,
-          gender: 'Laki-laki',
-          phone: dbG.phone || '',
-          email: `${dbG.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@example.com`,
-          specialization: 'Fiqih Manasik',
-          branch: 'Kantor Pusat Jakarta',
-          is_active: true,
-          status: 'Aktif',
-          bio: dbG.experience || '',
-          has_account: false,
-          created_at: dbG.created_at,
-          updated_at: dbG.updated_at,
-        };
-        merged.push(newGuide);
-        modified = true;
-      }
-    }
-
-    if (modified) {
-      writeData(merged);
-    }
-
-    return merged;
+    writeData(result);
+    return result;
   } catch (err) {
     console.error('Error fetching/merging guides:', err);
     return local;

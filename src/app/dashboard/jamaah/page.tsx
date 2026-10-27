@@ -12,45 +12,123 @@ const badge = {
 
 export default async function JamaahDashboard() {
   let name = 'Ahmad Fauzi';
+  let jamaahId: string | null = null;
+  const supabase = await createClient();
+
   try {
-    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
       if (p?.full_name) name = p.full_name;
+      const { data: j } = await supabase.from('jamaah').select('id, full_name').eq('profile_id', user.id).maybeSingle();
+      if (j) jamaahId = j.id;
     }
   } catch {}
 
-  const total = 28500000;
-  const paid = 28500000;
-  const depart = new Date(2026, 11, 10);
+  // If no auth user or not matched, find default demo jamaah Ahmad Fauzi in Supabase
+  if (!jamaahId) {
+    const { data: defaultJamaah } = await supabase
+      .from('jamaah')
+      .select('id, full_name')
+      .ilike('full_name', '%ahmad fauzi%')
+      .maybeSingle();
+    if (defaultJamaah) {
+      jamaahId = defaultJamaah.id;
+      name = defaultJamaah.full_name;
+    }
+  }
+
+  // Fetch registration for this jamaah
+  let reg: any = null;
+  let dbDocs: any[] = [];
+  let announcements: any[] = [];
+
+  if (jamaahId) {
+    const [regRes, docsRes, annRes] = await Promise.all([
+      supabase
+        .from('registrations')
+        .select(`
+          id,
+          status,
+          packages(id, name, price, duration_days, departure_date),
+          payments(amount, status)
+        `)
+        .eq('jamaah_id', jamaahId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from('documents').select('*').eq('jamaah_id', jamaahId),
+      supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(2),
+    ]);
+
+    reg = regRes.data;
+    dbDocs = docsRes.data || [];
+    announcements = annRes.data || [];
+  }
+
+  const pkgPrice = Number(reg?.packages?.price || 0);
+  const total = pkgPrice > 0 ? pkgPrice : 28500000;
+  const paid = (reg?.payments || [])
+    .filter((p: any) => p.status === 'paid')
+    .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+  const departDateStr = reg?.packages?.departure_date;
+  const depart = departDateStr ? new Date(departDateStr) : new Date(2026, 11, 10);
   const days = Math.max(0, Math.ceil((depart.getTime() - Date.now()) / 86400000));
 
-  const docs: { name: string; status: keyof typeof badge; label: string }[] = [
-    { name: 'KTP', status: 'ok', label: 'Terverifikasi' },
-    { name: 'Kartu Keluarga', status: 'up', label: 'Sudah Diunggah' },
-    { name: 'Paspor', status: 'no', label: 'Belum Diunggah' },
-    { name: 'Pas Foto 4x6 (latar putih)', status: 'ok', label: 'Terverifikasi' },
-    { name: 'Buku Nikah / Akta Lahir', status: 'ok', label: 'Terverifikasi' },
-    { name: 'Sertifikat Vaksin Meningitis', status: 'up', label: 'Sudah Diunggah' },
+  const packageName = reg?.packages?.name || 'Umroh Reguler';
+  const durationDays = reg?.packages?.duration_days || 10;
+  const regStatus = reg?.status === 'approved' ? 'Dikonfirmasi' : reg?.status ? 'Pending' : 'Dikonfirmasi';
+
+  // Checklist mapping based on real Supabase documents table
+  const docTypes: { typeKey: string; name: string }[] = [
+    { typeKey: 'KTP', name: 'KTP' },
+    { typeKey: 'KK', name: 'Kartu Keluarga' },
+    { typeKey: 'PASPOR', name: 'Paspor' },
+    { typeKey: 'FOTO', name: 'Pas Foto 4x6 (latar putih)' },
+    { typeKey: 'BUKU_NIKAH', name: 'Buku Nikah / Akta Lahir' },
+    { typeKey: 'BUKU_KUNING', name: 'Sertifikat Vaksin Meningitis' },
   ];
+
+  const docs = docTypes.map((dt) => {
+    const matched = dbDocs.find((d) => d.document_type?.toUpperCase() === dt.typeKey);
+    if (!matched) {
+      return { name: dt.name, status: 'no' as keyof typeof badge, label: 'Belum Diunggah' };
+    }
+    if (matched.status === 'valid') {
+      return { name: dt.name, status: 'ok' as keyof typeof badge, label: 'Terverifikasi' };
+    }
+    return { name: dt.name, status: 'up' as keyof typeof badge, label: 'Sudah Diunggah' };
+  });
+
   const verified = docs.filter((d) => d.status === 'ok').length;
+  const progressPercent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
 
   return (
     <div>
       <PageHeader title="Dashboard Jamaah" subtitle={`Selamat datang, ${name}`} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <StatCard icon={AlignJustify} tone="blue" label="Status Pendaftaran" value="Dikonfirmasi" />
+        <StatCard icon={AlignJustify} tone="blue" label="Status Pendaftaran" value={regStatus} />
         <StatCard
           icon={Banknote}
           tone="green"
           label="Progress Pembayaran"
-          value={`${Math.round((paid / total) * 100)}%`}
+          value={`${progressPercent}%`}
           sub={`${rupiah(paid)} / ${rupiah(total)}`}
         />
         <StatCard icon={FileText} tone="teal" label="Dokumen Terverifikasi" value={`${verified} / ${docs.length}`} />
-        <StatCard icon={CalendarDays} tone="purple" label="Hitung Mundur" value={`${days} hari`} sub="10 Dec 2026" />
+        <StatCard
+          icon={CalendarDays}
+          tone="purple"
+          label="Hitung Mundur"
+          value={`${days} hari`}
+          sub={depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
@@ -60,14 +138,16 @@ export default async function JamaahDashboard() {
             <span className="font-semibold text-slate-800">{rupiah(paid)}</span>
           </div>
           <div className="h-2.5 rounded-full bg-slate-100">
-            <div className="h-2.5 rounded-full bg-[#0F9488]" style={{ width: `${(paid / total) * 100}%` }} />
+            <div className="h-2.5 rounded-full bg-[#0F9488]" style={{ width: `${progressPercent}%` }} />
           </div>
           <div className="flex justify-between text-[11px] text-slate-600 mt-2 pb-4 border-b border-slate-100">
             <span>Sisa Tagihan</span>
-            <span className="font-semibold text-red-600">{rupiah(total - paid)}</span>
+            <span className="font-semibold text-red-600">{rupiah(Math.max(0, total - paid))}</span>
           </div>
-          <p className="text-[11px] font-medium text-slate-800 mt-4">Umroh Reguler 9 Hari</p>
-          <p className="text-[9px] text-slate-400">Umroh · 9 hari · Berangkat 10 Dec 2026</p>
+          <p className="text-[11px] font-medium text-slate-800 mt-4">{packageName}</p>
+          <p className="text-[9px] text-slate-400">
+            Umroh · {durationDays} hari · Berangkat {depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </p>
         </Card>
 
         <Card title="Checklist Dokumen">
@@ -87,7 +167,26 @@ export default async function JamaahDashboard() {
           <EmptyNote text="Belum ada jadwal manasik." />
         </Card>
         <Card title="Pengumuman Terbaru">
-          <EmptyNote text="Belum ada pengumuman." />
+          {announcements.length > 0 ? (
+            <div className="space-y-3">
+              {announcements.map((a) => (
+                <div key={a.id} className="border-b border-slate-50 last:border-b-0 pb-2 last:pb-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#F1ECFD] text-[#8B5CF6]">
+                      {a.audience || 'Semua'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-800">{a.title}</p>
+                  <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">{a.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyNote text="Belum ada pengumuman." />
+          )}
         </Card>
       </div>
     </div>

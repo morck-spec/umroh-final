@@ -153,20 +153,7 @@ export default function RegistrationCreateClient({
                     </option>
                   ))
                 ) : (
-                  <>
-                    <option value="Lukman Hakim">Lukman Hakim</option>
-                    <option value="Kartika Sari">Kartika Sari</option>
-                    <option value="Joko Widodo">Joko Widodo</option>
-                    <option value="Indra Kusuma">Indra Kusuma</option>
-                    <option value="Hesti Purnama">Hesti Purnama</option>
-                    <option value="Gunawan Wibowo">Gunawan Wibowo</option>
-                    <option value="Fitri Handayani">Fitri Handayani</option>
-                    <option value="Eko Prasetyo">Eko Prasetyo</option>
-                    <option value="Dewi Anggraini">Dewi Anggraini</option>
-                    <option value="Citra Lestari">Citra Lestari</option>
-                    <option value="Budi Santoso">Budi Santoso</option>
-                    <option value="Ahmad Fauzi">Ahmad Fauzi</option>
-                  </>
+                  <option value="" disabled>Belum ada data jamaah</option>
                 )}
               </select>
               <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />

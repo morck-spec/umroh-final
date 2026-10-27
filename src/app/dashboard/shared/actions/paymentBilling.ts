@@ -98,34 +98,117 @@ function writeData(data: any) {
   }
 }
 
-export async function getPaymentDashboardData() {
-  const data = readData();
 
-  // Try to load packages from Supabase
-  try {
-    const supabase = getSupabaseAdmin();
-    if (supabase) {
-      const { data: dbPkgs } = await supabase.from('packages').select('id, name, price, departure_date, quota');
-      if (dbPkgs && dbPkgs.length > 0) {
-        for (const p of dbPkgs) {
-          if (!data.packages.some((existing) => existing.name === p.name || existing.id === p.id)) {
-            data.packages.push({
-              id: p.id,
-              name: p.name,
-              type: p.name.toLowerCase().includes('haji') ? 'Haji' : 'Umroh',
-              price: p.price,
-              departure_date: p.departure_date || 'TBA',
-              quota: p.quota || 40,
-            });
+export async function getPaymentDashboardData() {
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    try {
+      const [paymentsRes, pkgsRes, regsRes] = await Promise.all([
+        supabase
+          .from('payments')
+          .select(`
+            id,
+            amount,
+            payment_method,
+            status,
+            created_at,
+            proof_url,
+            registration_id,
+            invoices (id, invoice_number),
+            registrations (
+              id,
+              created_at,
+              jamaah (id, full_name, phone),
+              packages (id, name, price, departure_date)
+            )
+          `)
+          .order('created_at', { ascending: false }),
+        supabase.from('packages').select('id, name, price, departure_date, quota').order('created_at', { ascending: false }),
+        supabase.from('registrations').select('id, packages(price)'),
+      ]);
+
+      if (paymentsRes.data) {
+        let totalPaid = 0;
+        let pendingVerification = 0;
+
+        const flatBills: FlatBillRow[] = paymentsRes.data.map((p: any) => {
+          const reg = p.registrations;
+          const regCode =
+            p.invoices?.[0]?.invoice_number?.match(/REG-\d+/)?.[0] ||
+            `REG-${String(p.registration_id).slice(0, 5).toUpperCase()}`;
+          const pAmount = Number(p.amount || 0);
+          const isPaid = p.status === 'paid';
+
+          if (isPaid) {
+            totalPaid += pAmount;
+          } else if (p.status === 'pending') {
+            pendingVerification++;
           }
-        }
+
+          const billCode =
+            p.invoices?.[0]?.invoice_number ||
+            `${regCode}-${p.payment_method ? p.payment_method.replace('_transfer', '').toUpperCase() : 'PAY'}-${String(p.id).slice(0, 4).toUpperCase()}`;
+
+          const methodMap: Record<string, string> = {
+            bca_transfer: 'Transfer BCA',
+            bsi_transfer: 'Transfer BSI',
+            mandiri_transfer: 'Transfer Mandiri',
+            mandiri: 'Transfer Mandiri',
+            ovo: 'OVO',
+            midtrans: 'Midtrans',
+            bank_transfer: 'Transfer Bank',
+          };
+
+          return {
+            id: p.id,
+            code: billCode,
+            type: methodMap[p.payment_method] || (p.payment_method ? p.payment_method.replace('_', ' ').toUpperCase() : 'Cicilan'),
+            amount: pAmount,
+            paid: isPaid ? pAmount : 0,
+            remaining: isPaid ? 0 : pAmount,
+            status: isPaid ? 'Lunas' : 'Belum Bayar',
+            due_date: p.created_at
+              ? new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+              : '-',
+            registration_id: p.registration_id,
+            registration_code: regCode,
+            jamaah_name: reg?.jamaah?.full_name || 'Tanpa Nama',
+            package_name: reg?.packages?.name || 'Paket Umroh',
+          };
+        });
+
+        // Total bills = sum of packages.price across all registrations
+        const totalBills = (regsRes.data || []).reduce((sum: number, r: any) => sum + Number(r.packages?.price || 0), 0) || totalPaid;
+        const totalUnpaid = Math.max(0, totalBills - totalPaid);
+
+        const mappedPackages = (pkgsRes.data || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          type: p.name?.toLowerCase().includes('haji') ? 'Haji' : 'Umroh',
+          price: Number(p.price || 0),
+          departure_date: p.departure_date ? new Date(p.departure_date).toLocaleDateString('id-ID') : 'TBA',
+          quota: p.quota || 40,
+        }));
+
+        return {
+          summary: {
+            total_bills: totalBills,
+            total_paid: totalPaid,
+            total_unpaid: totalUnpaid,
+            pending_verification: pendingVerification,
+          },
+          packages: mappedPackages,
+          bills: flatBills,
+        };
       }
+    } catch (err) {
+      console.warn('Could not load payment dashboard data from Supabase, falling back:', err);
     }
-  } catch (err) {
-    console.warn('Could not load packages from Supabase:', err);
   }
 
-  // Compute live flat bills
+  // Fallback to local data
+  const data = readData();
   const flatBills: FlatBillRow[] = [];
   let totalBills = 0;
   let totalPaid = 0;
@@ -159,71 +242,133 @@ export async function getPaymentDashboardData() {
 }
 
 export async function getRegistrationBilling(idOrCode: string): Promise<RegistrationBilling | null> {
-  const data = readData();
-  const found = data.registrations.find((r) => r.id === idOrCode || r.code === idOrCode);
-  if (found) return found;
+  const supabase = getSupabaseAdmin();
 
-  // Fallback to Supabase if not in JSON
-  try {
-    const supabase = getSupabaseAdmin();
-    if (supabase) {
-      let query = supabase
+  if (supabase) {
+    try {
+      const { data: dbData } = await supabase
         .from('registrations')
         .select(`
           *,
-          jamaah(id, full_name, passport_number, phone, branches(name)),
-          packages(id, name, type, price, departure_date)
+          jamaah(id, full_name, nik, phone, branches(name)),
+          packages(id, name, price, departure_date),
+          payments(*, invoices(invoice_number))
         `);
 
-      if (idOrCode.includes('-') && idOrCode.length > 20) {
-        query = query.eq('id', idOrCode);
-      } else {
-        query = query.eq('id', idOrCode);
-      }
-
-      const { data: dbItem } = await query.maybeSingle();
-      if (dbItem && dbItem.jamaah && dbItem.packages) {
-        const pkgPrice = dbItem.packages.price || 35000000;
-        const fallbackReg: RegistrationBilling = {
-          id: dbItem.id,
-          code: `REG-${String(dbItem.id).slice(0, 5)}`,
-          jamaah: {
-            name: dbItem.jamaah.full_name || 'Jamaah',
-            passport: dbItem.jamaah.passport_number || 'A1000011',
-            phone: dbItem.jamaah.phone || '-',
-          },
-          package: {
-            id: dbItem.packages.id,
-            name: dbItem.packages.name,
-            type: dbItem.packages.type || 'Umroh',
-            price: pkgPrice,
-            departure_date: dbItem.packages.departure_date
-              ? new Date(dbItem.packages.departure_date).toLocaleDateString('id-ID')
-              : '10 Jan 2027',
-          },
-          status: dbItem.status === 'approved' ? 'Dikonfirmasi' : dbItem.status === 'rejected' ? 'Batal' : 'Pending',
-          reg_date: new Date(dbItem.created_at).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          }),
-          agent: 'Hasan Basri',
-          guide: 'Ustadzah Khadijah',
-          branch: dbItem.jamaah.branches?.name || 'Kantor Pusat Jakarta',
-          total_amount: pkgPrice,
-          paid_amount: 0,
-          remaining_amount: pkgPrice,
-          payment_status: 'Belum Bayar',
-          bills: [],
+      if (dbData && dbData.length > 0) {
+        const getCodeForReg = (r: any, idx: number) => {
+          for (const p of r.payments || []) {
+            for (const inv of p.invoices || []) {
+              const m = inv.invoice_number?.match(/REG-\d+/);
+              if (m) return m[0];
+            }
+          }
+          return `REG-${String(dbData.length - idx).padStart(5, '0')}`;
         };
-        return fallbackReg;
+
+        // Find matching registration
+        const match = dbData.find((r: any, idx: number) => {
+          const code = getCodeForReg(r, idx);
+          const isNumericMatch = (idOrCode === '1' && code === 'REG-00001') || (idOrCode === '9' && code === 'REG-00009');
+          return (
+            r.id === idOrCode ||
+            code === idOrCode ||
+            code.toLowerCase() === idOrCode.toLowerCase() ||
+            isNumericMatch ||
+            r.jamaah?.full_name?.toLowerCase() === idOrCode.toLowerCase()
+          );
+        });
+
+        if (match) {
+          const matchIdx = dbData.indexOf(match);
+          const regCode = getCodeForReg(match, matchIdx);
+          const pkgPrice = Number(match.packages?.price || 0);
+          const payments = match.payments || [];
+          const paidAmount = payments
+            .filter((p: any) => p.status === 'paid')
+            .reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+          const remainingAmount = Math.max(0, pkgPrice - paidAmount);
+
+          let paymentStatus: 'Lunas' | 'Sebagian' | 'Belum Bayar' = 'Belum Bayar';
+          if (paidAmount >= pkgPrice && pkgPrice > 0) {
+            paymentStatus = 'Lunas';
+          } else if (paidAmount > 0) {
+            paymentStatus = 'Sebagian';
+          }
+
+          const bills: BillItem[] = payments.map((p: any, pIdx: number) => {
+            const pAmount = Number(p.amount || 0);
+            const isPaid = p.status === 'paid';
+            return {
+              id: p.id,
+              code: `${regCode}-P${pIdx + 1}`,
+              type: p.amount >= pkgPrice * 0.2 && pIdx === 0 ? 'Uang Muka (DP)' : 'Cicilan',
+              amount: pAmount,
+              paid: isPaid ? pAmount : 0,
+              remaining: isPaid ? 0 : pAmount,
+              status: isPaid ? 'Lunas' : 'Belum Bayar',
+              due_date: p.created_at
+                ? new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '-',
+            };
+          });
+
+          if (remainingAmount > 0) {
+            bills.push({
+              id: `b-remain-${match.id}`,
+              code: `${regCode}-SISA`,
+              type: 'Pelunasan',
+              amount: remainingAmount,
+              paid: 0,
+              remaining: remainingAmount,
+              status: 'Belum Bayar',
+              due_date: match.packages?.departure_date
+                ? new Date(match.packages.departure_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                : 'H-30 Keberangkatan',
+            });
+          }
+
+          return {
+            id: match.id,
+            code: regCode,
+            jamaah: {
+              name: match.jamaah?.full_name || 'Jamaah',
+              passport: match.jamaah?.nik ? `NIK: ${match.jamaah.nik}` : 'A1000011',
+              phone: match.jamaah?.phone || '-',
+            },
+            package: {
+              id: match.packages?.id || 'pkg-1',
+              name: match.packages?.name || 'Paket Umroh',
+              type: match.packages?.name?.toLowerCase().includes('haji') ? 'Haji' : 'Umroh',
+              price: pkgPrice,
+              departure_date: match.packages?.departure_date
+                ? new Date(match.packages.departure_date).toLocaleDateString('id-ID')
+                : '10 Jan 2027',
+            },
+            status: match.status === 'approved' ? 'Dikonfirmasi' : match.status === 'rejected' ? 'Batal' : 'Pending',
+            reg_date: match.created_at
+              ? new Date(match.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+              : '-',
+            agent: 'Hasan Basri',
+            guide: 'Ustadzah Khadijah',
+            branch: match.jamaah?.branches?.name || 'Kantor Pusat Jakarta',
+            total_amount: pkgPrice,
+            paid_amount: paidAmount,
+            remaining_amount: remainingAmount,
+            payment_status: paymentStatus,
+            bills,
+          };
+        }
       }
+    } catch (err) {
+      console.warn('Error fetching registration from Supabase:', err);
     }
-  } catch (err) {
-    console.warn('Error fetching registration from Supabase:', err);
   }
 
-  return null;
+  // Fallback to local JSON
+  const data = readData();
+  const found = data.registrations.find((r) => r.id === idOrCode || r.code === idOrCode);
+  return found || null;
 }
 
 export async function updateRegistrationStatusAction(regId: string, status: string) {

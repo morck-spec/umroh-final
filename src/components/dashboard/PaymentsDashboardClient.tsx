@@ -180,7 +180,7 @@ export default function PaymentsDashboardClient({
                 </tr>
               ) : (
                 filteredBills.map((b) => (
-                  <tr key={b.code} className="hover:bg-slate-50/70 transition-colors">
+                  <tr key={b.id || b.code} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-5 py-3.5 text-xs font-medium text-slate-700 whitespace-nowrap">
                       {b.code}
                     </td>

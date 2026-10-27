@@ -17,7 +17,7 @@
     "role": "Super Admin",
     "branch": "Kantor Pusat Jakarta",
     "status": "Aktif",
-    "last_login": "20 Oct 2026 13:25",
+    "last_login": "26 Oct 2026 22:16",
     "phone": "",
     "is_active": true
   },
@@ -50,7 +50,7 @@
     "role": "Admin Cabang",
     "branch": "cabang jember",
     "status": "Aktif",
-    "last_login": "20 Oct 2026 15:48",
+    "last_login": "23 Oct 2026 15:52",
     "phone": "",
     "is_active": true
   },
@@ -88,17 +88,6 @@
     "is_active": true
   },
   {
-    "id": "c00a7a11-e9e4-4f6d-81c3-0e6a7cebce36",
-    "name": "aufa putra",
-    "email": "jamaah@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "20 Oct 2026 13:31",
-    "phone": "",
-    "is_active": true
-  },
-  {
     "id": "9667445e-cc1c-4337-b74d-6d1657311d14",
     "name": "Hasan Basri",
     "email": "mitra@demo.com",
@@ -132,136 +121,14 @@
     "is_active": true
   },
   {
-    "id": "1",
-    "name": "Admin Cabang",
-    "email": "admin@example.com",
-    "role": "Admin Cabang",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "14 Oct 2026 12:38",
-    "phone": "081234567890",
-    "is_active": true
-  },
-  {
-    "id": "6",
-    "legacy_id": "6",
+    "id": "c00a7a11-e9e4-4f6d-81c3-0e6a7cebce36",
     "name": "Ahmad Fauzi",
     "email": "jamaah@example.com",
     "role": "Jamaah",
     "branch": "Kantor Pusat Jakarta",
     "status": "Aktif",
-    "last_login": "14 Oct 2026 06:16",
-    "phone": "081234567891",
-    "is_active": true
-  },
-  {
-    "id": "2",
-    "name": "Budi Santoso",
-    "email": "jamaah2@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567892",
-    "is_active": true
-  },
-  {
-    "id": "3",
-    "name": "Citra Lestari",
-    "email": "jamaah3@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567893",
-    "is_active": true
-  },
-  {
-    "id": "4",
-    "name": "Dewi Anggraini",
-    "email": "jamaah4@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567894",
-    "is_active": true
-  },
-  {
-    "id": "5",
-    "name": "Eko Prasetyo",
-    "email": "jamaah5@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567895",
-    "is_active": true
-  },
-  {
-    "id": "7",
-    "name": "Fitri Handayani",
-    "email": "jamaah6@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567896",
-    "is_active": true
-  },
-  {
-    "id": "8",
-    "name": "Gunawan Wibowo",
-    "email": "jamaah7@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567897",
-    "is_active": true
-  },
-  {
-    "id": "10",
-    "name": "Hesti Purnama",
-    "email": "jamaah8@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567899",
-    "is_active": true
-  },
-  {
-    "id": "11",
-    "name": "Indra Kusuma",
-    "email": "jamaah9@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "06 Oct 2026 08:23",
-    "phone": "081234567800",
-    "is_active": true
-  },
-  {
-    "id": "12",
-    "name": "Joko Widodo",
-    "email": "jamaah10@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567801",
-    "is_active": true
-  },
-  {
-    "id": "13",
-    "name": "Kartika Sari",
-    "email": "jamaah11@example.com",
-    "role": "Jamaah",
-    "branch": "Kantor Pusat Jakarta",
-    "status": "Aktif",
-    "last_login": "-",
-    "phone": "081234567802",
+    "last_login": "26 Oct 2026 10:45",
+    "phone": "",
     "is_active": true
   }
 ]

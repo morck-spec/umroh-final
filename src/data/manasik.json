@@ -1,7 +1,8 @@
 [
   {
-    "id": "8",
+    "id": "0ffa45dc-9491-4a68-b0db-e10368137326",
     "title": "Manasik Haji Plus Eksklusif #2",
+    "package_id": null,
     "package_name": "Haji Plus Eksklusif",
     "instructor": "Ustadz Abdullah",
     "date": "2026-10-27",
@@ -10,11 +11,22 @@
     "time_end": "12:00",
     "location": "Aula Kantor Pusat Jakarta",
     "description": "Pembekalan manasik dan tata cara ibadah.",
-    "attendances": []
+    "attendances": [
+      {
+        "jamaah_name": "Indra Kusuma",
+        "status": "Tidak Hadir"
+      },
+      {
+        "jamaah_name": "Dewi Anggraini",
+        "status": "Tidak Hadir"
+      }
+    ],
+    "ratio": "0 / 2"
   },
   {
-    "id": "7",
+    "id": "6af08d5b-b95b-46fa-9561-c51da43e2069",
     "title": "Manasik Haji Khusus 2026 #2",
+    "package_id": null,
     "package_name": "Haji Khusus 2026",
     "instructor": "Ustadzah Khadijah",
     "date": "2026-10-26",
@@ -28,11 +40,13 @@
         "jamaah_name": "Hesti Purnama",
         "status": "Tidak Hadir"
       }
-    ]
+    ],
+    "ratio": "0 / 1"
   },
   {
-    "id": "6",
+    "id": "b34f9252-8fd3-4fa6-b85d-f28a8487d6f5",
     "title": "Manasik Umroh Plus Turki 12 Hari #2",
+    "package_id": null,
     "package_name": "Umroh Plus Turki 12 Hari",
     "instructor": "Ustadz Fauzan",
     "date": "2026-10-25",
@@ -46,11 +60,13 @@
         "jamaah_name": "Gunawan Wibowo",
         "status": "Tidak Hadir"
       }
-    ]
+    ],
+    "ratio": "0 / 1"
   },
   {
-    "id": "5",
+    "id": "031c8a31-0a4c-4f09-9788-e2d1969c438b",
     "title": "Manasik Umroh Reguler 9 Hari #2",
+    "package_id": null,
     "package_name": "Umroh Reguler 9 Hari",
     "instructor": "Ustadz Abdullah",
     "date": "2026-10-24",
@@ -59,15 +75,26 @@
     "time_end": "12:30",
     "location": "Aula Kantor Pusat Jakarta",
     "description": "Tata cara ihram, niat dan larangan ihram.",
-    "attendances": []
+    "attendances": [
+      {
+        "jamaah_name": "Dewi Anggraini",
+        "status": "Tidak Hadir"
+      },
+      {
+        "jamaah_name": "Indra Kusuma",
+        "status": "Tidak Hadir"
+      }
+    ],
+    "ratio": "0 / 2"
   },
   {
-    "id": "4",
+    "id": "3565f568-0a3a-4a6d-906d-941eb926d85e",
     "title": "Manasik Haji Plus Eksklusif #1",
+    "package_id": null,
     "package_name": "Haji Plus Eksklusif",
     "instructor": "Ustadz Abdullah",
     "date": "2026-09-27",
-    "date_formatted": "27 Sep 2026",
+    "date_formatted": "27 Sept 2026",
     "time_start": "08:00",
     "time_end": "12:00",
     "location": "Aula Kantor Pusat Jakarta",
@@ -81,15 +108,17 @@
         "jamaah_name": "Ahmad Fauzi",
         "status": "Hadir"
       }
-    ]
+    ],
+    "ratio": "2 / 2"
   },
   {
-    "id": "3",
+    "id": "ef024ebe-88da-489b-9f7f-a52f8014914b",
     "title": "Manasik Haji Khusus 2026 #1",
+    "package_id": null,
     "package_name": "Haji Khusus 2026",
     "instructor": "Ustadzah Khadijah",
     "date": "2026-09-26",
-    "date_formatted": "26 Sep 2026",
+    "date_formatted": "26 Sept 2026",
     "time_start": "08:00",
     "time_end": "12:00",
     "location": "Aula Kantor Pusat Jakarta",
@@ -103,15 +132,17 @@
         "jamaah_name": "Ahmad Fauzi",
         "status": "Hadir"
       }
-    ]
+    ],
+    "ratio": "2 / 2"
   },
   {
-    "id": "2",
+    "id": "b7e4a4f5-164a-48bb-a014-eb2d15274301",
     "title": "Manasik Umroh Plus Turki 12 Hari #1",
+    "package_id": null,
     "package_name": "Umroh Plus Turki 12 Hari",
     "instructor": "Ustadz Fauzan",
     "date": "2026-09-25",
-    "date_formatted": "25 Sep 2026",
+    "date_formatted": "25 Sept 2026",
     "time_start": "09:00",
     "time_end": "13:00",
     "location": "Aula Kantor Pusat Jakarta",
@@ -129,15 +160,17 @@
         "jamaah_name": "Siti Rahmawati",
         "status": "Tidak Hadir"
       }
-    ]
+    ],
+    "ratio": "2 / 3"
   },
   {
-    "id": "1",
+    "id": "e6c47747-590e-4e9d-935b-f06e85217883",
     "title": "Manasik Umroh Reguler 9 Hari #1",
+    "package_id": null,
     "package_name": "Umroh Reguler 9 Hari",
     "instructor": "Ustadz Abdullah",
     "date": "2026-09-24",
-    "date_formatted": "24 Sep 2026",
+    "date_formatted": "24 Sept 2026",
     "time_start": "08:30",
     "time_end": "12:30",
     "location": "Aula Kantor Pusat Jakarta",
@@ -151,6 +184,7 @@
         "jamaah_name": "Dewi Anggraini",
         "status": "Hadir"
       }
-    ]
+    ],
+    "ratio": "2 / 2"
   }
 ]

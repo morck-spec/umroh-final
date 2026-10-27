@@ -95,52 +95,50 @@ export async function getJamaah(): Promise<JamaahItem[]> {
       .order('created_at', { ascending: false });
 
     if (!error && dbData && dbData.length > 0) {
-      const mergedMap = new Map<string, JamaahItem>();
-      fileItems.forEach((f) => mergedMap.set(f.id, f));
+      return dbData.map((dbItem: any, idx: number) => {
+        // Enriched details if matches local file
+        const matchLocal = fileItems.find(
+          (f) => f.id === dbItem.id || f.full_name?.toLowerCase().trim() === dbItem.full_name?.toLowerCase().trim()
+        );
 
-      dbData.forEach((dbItem: any) => {
-        const existing = mergedMap.get(dbItem.id);
-        const mapped: JamaahItem = {
+        return {
           id: dbItem.id,
-          legacy_id: existing?.legacy_id,
-          code: existing?.code || `JM-${String(dbItem.id).slice(0, 4).toUpperCase()}`,
-          full_name: dbItem.full_name || dbItem.profiles?.full_name || existing?.full_name || 'Tanpa Nama',
-          gender: (dbItem.gender === 'P' || existing?.gender === 'Perempuan') ? 'Perempuan' : 'Laki-laki',
-          nik: dbItem.nik || existing?.nik || '',
-          phone: dbItem.phone || existing?.phone || '',
-          email: existing?.email || '',
-          birth_place: existing?.birth_place || '',
-          birth_date: dbItem.birth_date || existing?.birth_date || '',
-          blood_type: existing?.blood_type || '',
-          city: existing?.city || '',
-          address: existing?.address || '',
-          passport_number: existing?.passport_number || '',
-          passport_issued_place: existing?.passport_issued_place || '',
-          passport_issued_date: existing?.passport_issued_date || '',
-          passport_expiry_date: existing?.passport_expiry_date || '',
-          passport_expiry_formatted: existing?.passport_expiry_formatted || (existing?.passport_expiry_date ? formatExpiryDate(existing.passport_expiry_date) : '-'),
-          branch_id: dbItem.branch_id || existing?.branch_id || null,
-          branch_name: dbItem.branches?.name || existing?.branch_name || 'Kantor Pusat Jakarta',
-          agent_name: existing?.agent_name || '-',
-          mahram_name: existing?.mahram_name || '-',
-          mahram_relation: existing?.mahram_relation || '-',
-          emergency_contact_name: existing?.emergency_contact_name || dbItem.emergency_contact || '-',
-          emergency_contact_phone: existing?.emergency_contact_phone || '',
-          emergency_contact: dbItem.emergency_contact || existing?.emergency_contact || '',
-          health_notes: existing?.health_notes || '',
-          is_active: existing?.is_active ?? true,
-          status: existing?.status || 'Aktif',
-          account_login: (dbItem.profile_id || existing?.account_login === 'Aktif') ? 'Aktif' : 'Belum Ada Akun',
-          document_count: existing?.document_count ?? 6,
+          legacy_id: matchLocal?.legacy_id,
+          code: matchLocal?.code || `JM-${String(idx + 1).padStart(4, '0')}`,
+          full_name: dbItem.full_name || dbItem.profiles?.full_name || 'Tanpa Nama',
+          gender: (dbItem.gender === 'P' || dbItem.gender === 'Perempuan' || matchLocal?.gender === 'Perempuan') ? 'Perempuan' : 'Laki-laki',
+          nik: dbItem.nik || matchLocal?.nik || '',
+          phone: dbItem.phone || matchLocal?.phone || '',
+          email: matchLocal?.email || '',
+          birth_place: matchLocal?.birth_place || '',
+          birth_date: dbItem.birth_date || matchLocal?.birth_date || '',
+          blood_type: matchLocal?.blood_type || '',
+          city: matchLocal?.city || '',
+          address: matchLocal?.address || '',
+          passport_number: matchLocal?.passport_number || '',
+          passport_issued_place: matchLocal?.passport_issued_place || '',
+          passport_issued_date: matchLocal?.passport_issued_date || '',
+          passport_expiry_date: matchLocal?.passport_expiry_date || '',
+          passport_expiry_formatted: matchLocal?.passport_expiry_formatted || (matchLocal?.passport_expiry_date ? formatExpiryDate(matchLocal.passport_expiry_date) : '-'),
+          branch_id: dbItem.branch_id || matchLocal?.branch_id || null,
+          branch_name: dbItem.branches?.name || matchLocal?.branch_name || 'Kantor Pusat Jakarta',
+          agent_name: matchLocal?.agent_name || '-',
+          mahram_name: matchLocal?.mahram_name || '-',
+          mahram_relation: matchLocal?.mahram_relation || '-',
+          emergency_contact_name: matchLocal?.emergency_contact_name || dbItem.emergency_contact || '-',
+          emergency_contact_phone: matchLocal?.emergency_contact_phone || '',
+          emergency_contact: dbItem.emergency_contact || matchLocal?.emergency_contact || '',
+          health_notes: matchLocal?.health_notes || '',
+          is_active: matchLocal?.is_active ?? true,
+          status: matchLocal?.status || 'Aktif',
+          account_login: (dbItem.profile_id || matchLocal?.account_login === 'Aktif') ? 'Aktif' : 'Belum Ada Akun',
+          document_count: matchLocal?.document_count ?? 0,
           profiles: dbItem.profiles,
           branches: dbItem.branches,
           profile_id: dbItem.profile_id,
           created_at: dbItem.created_at,
         };
-        mergedMap.set(dbItem.id, mapped);
       });
-
-      return Array.from(mergedMap.values());
     }
   } catch (err) {
     // If supabase fails, rely purely on local json file
