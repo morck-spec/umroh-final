@@ -1,27 +1,36 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import ReceiptClient from './ReceiptClient';
 
-export const metadata = { title: 'Kwitansi Pembayaran | Al-Madinah Travel' };
+export const metadata = { title: 'Kwitansi Pembayaran | Travel Umroh & Haji' };
+
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key);
+}
 
 export default async function ReceiptPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const paymentId = params.id;
 
   if (!paymentId) {
-    redirect('/');
+    redirect('/dashboard/jamaah/payment');
   }
 
   const supabase = await createClient();
+  const adminDb = getAdminClient() || supabase;
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/login');
   }
 
-  // Ambil data pembayaran
-  const { data: payment } = await supabase
+  // 1. Try finding payment directly by id
+  let { data: payment } = await adminDb
     .from('payments')
     .select(`
       id,
@@ -29,6 +38,7 @@ export default async function ReceiptPage(props: { params: Promise<{ id: string 
       payment_method,
       status,
       created_at,
+      registration_id,
       registrations (
         id,
         packages (
@@ -41,7 +51,92 @@ export default async function ReceiptPage(props: { params: Promise<{ id: string 
       )
     `)
     .eq('id', paymentId)
-    .single();
+    .maybeSingle();
+
+  // 2. If not found and paymentId is a registration id or starts with b-remain-
+  if (!payment) {
+    const cleanRegId = paymentId.replace('b-remain-', '');
+    const { data: pByReg } = await adminDb
+      .from('payments')
+      .select(`
+        id,
+        amount,
+        payment_method,
+        status,
+        created_at,
+        registration_id,
+        registrations (
+          id,
+          packages (
+            name,
+            price
+          ),
+          jamaah (
+            full_name
+          )
+        )
+      `)
+      .eq('registration_id', cleanRegId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pByReg) {
+      payment = pByReg;
+    }
+  }
+
+  // 3. Fallback to latest payment for this logged-in user
+  if (!payment && user) {
+    try {
+      const { data: jData } = await adminDb
+        .from('jamaah')
+        .select('id')
+        .eq('profile_id', user.id)
+        .maybeSingle();
+
+      if (jData) {
+        const { data: regList } = await adminDb
+          .from('registrations')
+          .select('id')
+          .eq('jamaah_id', jData.id);
+
+        const regIds = (regList || []).map((r) => r.id);
+        if (regIds.length > 0) {
+          const { data: pLatest } = await adminDb
+            .from('payments')
+            .select(`
+              id,
+              amount,
+              payment_method,
+              status,
+              created_at,
+              registration_id,
+              registrations (
+                id,
+                packages (
+                  name,
+                  price
+                ),
+                jamaah (
+                  full_name
+                )
+              )
+            `)
+            .in('registration_id', regIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (pLatest) {
+            payment = pLatest;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Fallback user payment lookup skipped:', e);
+    }
+  }
 
   if (!payment) {
     // Check payments.json for bill matching paymentId
@@ -57,12 +152,12 @@ export default async function ReceiptPage(props: { params: Promise<{ id: string 
           if (matchedBill || r.id === paymentId || r.code === paymentId) {
             const formatted = {
               id: matchedBill?.code || r.code || paymentId,
-              amount: matchedBill?.amount || r.total_amount || 35000000,
+              amount: matchedBill?.amount || r.total_amount || 28500000,
               method: 'midtrans_va',
               status: 'paid',
               date: new Date().toISOString(),
-              jamaahName: r.jamaah?.name || 'Ahmad Fauzi',
-              packageName: r.package?.name || 'Haji Plus Eksklusif',
+              jamaahName: r.jamaah?.name || 'Jamaah',
+              packageName: r.package?.name || 'Umroh Reguler',
             };
             return <ReceiptClient payment={formatted} />;
           }

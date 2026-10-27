@@ -82,13 +82,14 @@ export default function JamaahPaymentClient({ registration }: JamaahPaymentClien
         (window as any).snap.pay(res.token, {
           onSuccess: async function (result: any) {
             console.log('Midtrans Snap Success:', result);
-            await completePaymentFromSnap({
+            const compRes = await completePaymentFromSnap({
               billId: bill.id,
               amount: bill.remaining || bill.amount,
               paymentMethod: result.payment_type || 'midtrans',
             });
+            const receiptId = compRes?.paymentId || bill.id;
             // Redirect to Kwitansi Pembayaran
-            router.push(`/receipt/${bill.id}`);
+            router.push(`/receipt/${receiptId}`);
           },
           onPending: function (result: any) {
             console.log('Midtrans Snap Pending:', result);

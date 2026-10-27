@@ -481,84 +481,147 @@ export async function generateMassBillingAction(formData: FormData): Promise<{ s
   return { success: true };
 }
 
-export async function payBillAction(regId: string, billId: string, payAmount: number, paymentMethod: string = 'midtrans_va') {
-  const data = readData();
-  let reg = data.registrations.find((r) => r.id === regId);
-  if (!reg) {
-    reg = data.registrations.find((r) => r.bills?.some((b) => b.id === billId || b.code === billId));
-  }
-  if (!reg) return { error: 'Pendaftaran tidak ditemukan' };
+export async function payBillAction(
+  regId: string,
+  billId: string,
+  payAmount: number,
+  paymentMethod: string = 'midtrans_va'
+): Promise<{ success?: boolean; error?: string; paymentId?: string }> {
+  const supabase = getSupabaseAdmin();
+  let paymentRecordId = '';
 
-  const bill = reg.bills.find((b) => b.id === billId || b.code === billId);
-  if (!bill) return { error: 'Tagihan tidak ditemukan' };
-
-  bill.paid = Math.min(bill.amount, bill.paid + payAmount);
-  bill.remaining = Math.max(0, bill.amount - bill.paid);
-  bill.status = bill.remaining === 0 ? 'Lunas' : bill.paid > 0 ? 'Sebagian' : 'Belum Bayar';
-
-  // Recalculate reg
-  reg.paid_amount = reg.bills.reduce((sum, b) => sum + b.paid, 0);
-  reg.remaining_amount = Math.max(0, reg.total_amount - reg.paid_amount);
-  reg.payment_status = reg.remaining_amount === 0 ? 'Lunas' : reg.paid_amount > 0 ? 'Sebagian' : 'Belum Bayar';
-
-  writeData(data);
-
-  // Sync payment and invoice to Supabase database
-  try {
-    const supabase = getSupabaseAdmin();
-    if (supabase) {
-      // Find registration in Supabase
-      const { data: jData } = await supabase
-        .from('jamaah')
-        .select('id')
-        .eq('full_name', reg.jamaah.name)
+  // 1. Check and update directly in Supabase
+  if (supabase) {
+    try {
+      // Case A: billId is a direct UUID in public.payments
+      const { data: existingPayment } = await supabase
+        .from('payments')
+        .select('id, registration_id')
+        .eq('id', billId)
         .maybeSingle();
 
-      if (jData) {
-        const { data: rData } = await supabase
-          .from('registrations')
+      if (existingPayment) {
+        paymentRecordId = existingPayment.id;
+        await supabase
+          .from('payments')
+          .update({
+            status: 'paid',
+            amount: payAmount,
+            payment_method: paymentMethod || 'midtrans',
+          })
+          .eq('id', existingPayment.id);
+
+        // Ensure invoice exists
+        const { data: inv } = await supabase
+          .from('invoices')
           .select('id')
-          .eq('jamaah_id', jData.id)
+          .eq('payment_id', existingPayment.id)
           .maybeSingle();
 
-        if (rData) {
-          const { data: payRecord } = await supabase
+        if (!inv) {
+          await supabase.from('invoices').insert({
+            invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+            payment_id: existingPayment.id,
+            amount: payAmount,
+            issued_at: new Date().toISOString(),
+          });
+        }
+      } else if (billId.startsWith('b-remain-')) {
+        // Case B: Pelunasan bill with registration UUID
+        const targetRegId = billId.replace('b-remain-', '');
+        const { data: newPay, error: newPayErr } = await supabase
+          .from('payments')
+          .insert({
+            registration_id: targetRegId,
+            amount: payAmount,
+            payment_method: paymentMethod || 'midtrans',
+            status: 'paid',
+          })
+          .select()
+          .single();
+
+        if (newPay && !newPayErr) {
+          paymentRecordId = newPay.id;
+          await supabase.from('invoices').insert({
+            invoice_number: `INV-LUNAS-${Date.now().toString().slice(-6)}`,
+            payment_id: newPay.id,
+            amount: payAmount,
+            issued_at: new Date().toISOString(),
+          });
+        }
+      } else {
+        // Case C: Look up registration by regId or matching bill
+        let targetRegistrationId = regId;
+
+        if (!targetRegistrationId) {
+          const { data: rData } = await supabase
+            .from('registrations')
+            .select('id')
+            .or(`id.eq.${billId}`)
+            .maybeSingle();
+          if (rData) targetRegistrationId = rData.id;
+        }
+
+        if (targetRegistrationId) {
+          const { data: newPay } = await supabase
             .from('payments')
             .insert({
-              registration_id: rData.id,
+              registration_id: targetRegistrationId,
               amount: payAmount,
-              payment_method: paymentMethod || 'midtrans_simulator',
-              status: 'paid'
+              payment_method: paymentMethod || 'midtrans',
+              status: 'paid',
             })
             .select()
             .single();
 
-          if (payRecord) {
-            const invoiceNumber = `INV-${bill.code || Date.now()}`;
+          if (newPay) {
+            paymentRecordId = newPay.id;
             await supabase.from('invoices').insert({
-              invoice_number: invoiceNumber,
-              payment_id: payRecord.id,
+              invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+              payment_id: newPay.id,
               amount: payAmount,
-              issued_at: new Date().toISOString()
+              issued_at: new Date().toISOString(),
             });
           }
         }
       }
+    } catch (dbErr) {
+      console.error('Error recording payment in Supabase:', dbErr);
     }
-  } catch (err) {
-    console.error('Error syncing payment to Supabase:', err);
   }
 
+  // 2. Also update local payments.json if applicable
   try {
-    revalidatePath('/dashboard/superadmin/payments');
-    revalidatePath('/dashboard/admin/payments');
-    revalidatePath('/dashboard/admin_cabang/payments');
-    revalidatePath('/dashboard/jamaah/payment');
-    revalidatePath('/payments');
-  } catch {
-    // Ignore in non-action context
+    const data = readData();
+    let reg = data.registrations.find((r) => r.id === regId);
+    if (!reg) {
+      reg = data.registrations.find((r) => r.bills?.some((b) => b.id === billId || b.code === billId));
+    }
+    if (reg) {
+      const bill = reg.bills.find((b) => b.id === billId || b.code === billId);
+      if (bill) {
+        bill.paid = Math.min(bill.amount, bill.paid + payAmount);
+        bill.remaining = Math.max(0, bill.amount - bill.paid);
+        bill.status = bill.remaining === 0 ? 'Lunas' : bill.paid > 0 ? 'Sebagian' : 'Belum Bayar';
+        reg.paid_amount = reg.bills.reduce((sum, b) => sum + b.paid, 0);
+        reg.remaining_amount = Math.max(0, reg.total_amount - reg.paid_amount);
+        reg.payment_status = reg.remaining_amount === 0 ? 'Lunas' : reg.paid_amount > 0 ? 'Sebagian' : 'Belum Bayar';
+        writeData(data);
+      }
+    }
+  } catch (jsonErr) {
+    console.warn('Local payments.json sync skipped:', jsonErr);
   }
-  return { success: true };
+
+  revalidatePath('/dashboard/jamaah');
+  revalidatePath('/dashboard/jamaah/payment');
+  revalidatePath('/dashboard/jamaah/payments');
+  revalidatePath('/dashboard/superadmin/payments');
+  revalidatePath('/dashboard/admin/payments');
+  revalidatePath('/dashboard/admin_cabang/payments');
+  revalidatePath('/payments');
+
+  return { success: true, paymentId: paymentRecordId || billId };
 }
 
 export async function updateRegistrationDetailAction(

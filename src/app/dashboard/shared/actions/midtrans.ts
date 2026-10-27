@@ -69,16 +69,19 @@ export async function completePaymentFromSnap(params: {
   billId: string;
   amount: number;
   paymentMethod: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; paymentId?: string; error?: string }> {
   const res = await payBillAction('', params.billId, params.amount, params.paymentMethod);
   if (res.error) {
     return { success: false, error: res.error };
   }
 
+  revalidatePath('/dashboard/jamaah');
   revalidatePath('/dashboard/jamaah/payment');
+  revalidatePath('/dashboard/jamaah/payments');
   revalidatePath('/payments');
-  return { success: true };
+  return { success: true, paymentId: res.paymentId };
 }
 
 export const simulatePaymentSuccessAction = completePaymentFromSnap;
+
 
