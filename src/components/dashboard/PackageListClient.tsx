@@ -2,12 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Plus } from 'lucide-react';
-import { PackageItem, deletePackage } from '@/app/dashboard/shared/actions/packages';
+import { usePathname, useRouter } from 'next/navigation';
+import { Plus, Loader2 } from 'lucide-react';
+import { PackageItem, deletePackage, registerForPackageAction } from '@/app/dashboard/shared/actions/packages';
 
 interface PackageListClientProps {
   initialPackages: PackageItem[];
+  role?: string;
 }
 
 function formatDate(dateStr?: string | null): string {
@@ -26,8 +27,10 @@ function formatRupiah(amount: number): string {
   return `Rp ${Number(amount).toLocaleString('id-ID')}`;
 }
 
-export default function PackageListClient({ initialPackages }: PackageListClientProps) {
+export default function PackageListClient({ initialPackages, role }: PackageListClientProps) {
+  const router = useRouter();
   const pathname = usePathname();
+  const isJamaah = role === 'jamaah';
   const isCabang = pathname.includes('/admin_cabang');
   const isAdmin = pathname.includes('/dashboard/admin/');
   const basePath = isCabang
@@ -38,7 +41,9 @@ export default function PackageListClient({ initialPackages }: PackageListClient
     ? '/packages'
     : '/dashboard/superadmin/packages';
 
-  const dashboardHome = isCabang
+  const dashboardHome = isJamaah
+    ? '/dashboard/jamaah'
+    : isCabang
     ? '/dashboard/admin_cabang'
     : isAdmin
     ? '/dashboard/admin'
@@ -49,6 +54,9 @@ export default function PackageListClient({ initialPackages }: PackageListClient
   const [appliedSearch, setAppliedSearch] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+
+  const [registeringPkg, setRegisteringPkg] = useState<PackageItem | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const filteredPackages = useMemo(() => {
     return packages.filter((pkg) => {
@@ -79,6 +87,23 @@ export default function PackageListClient({ initialPackages }: PackageListClient
     }
   };
 
+  const handleConfirmRegistration = async () => {
+    if (!registeringPkg) return;
+    setIsRegistering(true);
+    try {
+      const res = await registerForPackageAction(registeringPkg.id);
+      if (res.success && res.redirectUrl) {
+        router.push(res.redirectUrl);
+      } else {
+        alert(res.error || 'Gagal mendaftar paket umroh');
+        setIsRegistering(false);
+      }
+    } catch (err: any) {
+      alert('Terjadi kesalahan: ' + (err?.message || err));
+      setIsRegistering(false);
+    }
+  };
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       {/* Breadcrumb & Header */}
@@ -91,23 +116,31 @@ export default function PackageListClient({ initialPackages }: PackageListClient
             <span>&gt;</span>
             <span className="text-slate-600">Paket</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Paket</h1>
-          <p className="text-[12px] text-slate-500 mt-0.5">Daftar paket Umroh &amp; Haji</p>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            {isJamaah ? 'Pilihan Paket Umroh & Haji' : 'Paket'}
+          </h1>
+          <p className="text-[12px] text-slate-500 mt-0.5">
+            {isJamaah
+              ? 'Pilih paket perjalanan ibadah Umroh & Haji yang tersedia untuk mendaftar'
+              : 'Daftar paket Umroh & Haji'}
+          </p>
         </div>
 
-        <Link
-          href={`${basePath}/create`}
-          style={{ backgroundColor: 'var(--brand-primary, #00d4b2)' }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-white text-[13px] font-medium shadow-xs hover:opacity-90 active:scale-[0.99] transition-all self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tambah Paket</span>
-        </Link>
+        {!isJamaah && (
+          <Link
+            href={`${basePath}/create`}
+            style={{ backgroundColor: 'var(--brand-primary, #00d4b2)' }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-white text-[13px] font-medium shadow-xs hover:opacity-90 active:scale-[0.99] transition-all self-start sm:self-auto cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah Paket</span>
+          </Link>
+        )}
       </div>
 
       {/* Main Card with Filters & Table */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        {/* Filter Bar matching Photo 2 */}
+        {/* Filter Bar */}
         <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3">
           <input
             type="text"
@@ -219,26 +252,39 @@ export default function PackageListClient({ initialPackages }: PackageListClient
                           {pkg.status || 'Dibuka'}
                         </span>
                       </td>
-                      <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap space-x-3">
+                      <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap space-x-2">
                         <Link
                           href={`${basePath}/${pkg.id}`}
-                          className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                          className="text-slate-500 hover:text-slate-700 font-medium text-[12px] px-2.5 py-1.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors inline-block"
                         >
                           Detail
                         </Link>
-                        <Link
-                          href={`${basePath}/${pkg.id}/edit`}
-                          className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(pkg.id, pkg.name)}
-                          className="text-rose-600 hover:text-rose-700 font-medium transition-colors cursor-pointer"
-                        >
-                          Hapus
-                        </button>
+                        {isJamaah ? (
+                          <button
+                            type="button"
+                            onClick={() => setRegisteringPkg(pkg)}
+                            style={{ backgroundColor: 'var(--brand-primary, #00d4b2)' }}
+                            className="px-3.5 py-1.5 rounded text-white text-[12px] font-medium shadow-2xs hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer inline-block"
+                          >
+                            Daftar Sekarang
+                          </button>
+                        ) : (
+                          <>
+                            <Link
+                              href={`${basePath}/${pkg.id}/edit`}
+                              className="text-teal-600 hover:text-teal-700 font-medium transition-colors inline-block"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(pkg.id, pkg.name)}
+                              className="text-rose-600 hover:text-rose-700 font-medium transition-colors cursor-pointer inline-block"
+                            >
+                              Hapus
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   );
@@ -248,6 +294,77 @@ export default function PackageListClient({ initialPackages }: PackageListClient
           </table>
         </div>
       </div>
+
+      {/* Modal Konfirmasi Pendaftaran Jamaah */}
+      {registeringPkg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-100 max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Konfirmasi Pendaftaran Paket</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Pastikan pilihan paket ibadah Anda sudah sesuai sebelum melanjutkan ke proses pembayaran.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 space-y-2.5 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nama Paket:</span>
+                <span className="font-semibold text-slate-800 text-right">{registeringPkg.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Jenis Paket:</span>
+                <span className="font-medium text-slate-700">{registeringPkg.type}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Keberangkatan:</span>
+                <span className="text-slate-700">
+                  {formatDate(registeringPkg.departure_date)} ({registeringPkg.duration_days} Hari)
+                </span>
+              </div>
+              <div className="border-t border-slate-200/60 pt-2 flex justify-between">
+                <span className="text-slate-500">Total Harga:</span>
+                <span className="font-bold text-slate-800">{formatRupiah(registeringPkg.price)}</span>
+              </div>
+              <div className="flex justify-between text-emerald-600 font-medium">
+                <span>Uang Muka (DP 20%):</span>
+                <span>{formatRupiah(Math.round(registeringPkg.price * 0.2))}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Setelah pendaftaran dikonfirmasi, akun Anda akan otomatis terdaftar dan diarahkan ke halaman pembayaran untuk membayar uang muka (DP).
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-1">
+              <button
+                type="button"
+                disabled={isRegistering}
+                onClick={() => setRegisteringPkg(null)}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isRegistering}
+                onClick={handleConfirmRegistration}
+                style={{ backgroundColor: 'var(--brand-primary, #00d4b2)' }}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-white text-xs font-medium shadow-xs hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isRegistering ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Mendaftarkan...</span>
+                  </>
+                ) : (
+                  <span>Konfirmasi &amp; Lanjut Bayar</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

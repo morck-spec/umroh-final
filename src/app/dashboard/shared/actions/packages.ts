@@ -327,3 +327,126 @@ export async function updatePackage(id: string, formData: FormData) {
     facilities_excluded: ['Pengeluaran pribadi'],
   });
 }
+
+export async function registerForPackageAction(packageId: string): Promise<{ success: boolean; error?: string; redirectUrl?: string }> {
+  try {
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Silakan login terlebih dahulu untuk mendaftar paket' };
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    const fullName = profile?.full_name || user.user_metadata?.name || 'Jamaah';
+
+    // 1. Ensure jamaah record exists in Supabase
+    let { data: jData } = await supabase
+      .from('jamaah')
+      .select('*')
+      .eq('profile_id', user.id)
+      .maybeSingle();
+
+    if (!jData) {
+      const { data: newJ, error: jErr } = await supabase
+        .from('jamaah')
+        .insert({
+          profile_id: user.id,
+          full_name: fullName,
+          phone: user.phone || user.user_metadata?.phone || '',
+        })
+        .select()
+        .single();
+
+      if (!jErr && newJ) {
+        jData = newJ;
+      }
+    }
+
+    // 2. Fetch package info
+    const packages = await getPackagesList();
+    const pkg = packages.find((p) => p.id === packageId) || packages[0];
+    const pkgPrice = pkg?.price || 28500000;
+    const pkgName = pkg?.name || 'Paket Umroh';
+
+    // 3. Create registration in Supabase
+    if (jData) {
+      const { data: existingReg } = await supabase
+        .from('registrations')
+        .select('id')
+        .eq('jamaah_id', jData.id)
+        .eq('package_id', packageId)
+        .maybeSingle();
+
+      if (!existingReg) {
+        const { data: newReg } = await supabase
+          .from('registrations')
+          .insert({
+            jamaah_id: jData.id,
+            package_id: packageId,
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        if (newReg) {
+          const dpAmount = Math.round(pkgPrice * 0.2);
+          const { data: payRecord } = await supabase
+            .from('payments')
+            .insert({
+              registration_id: newReg.id,
+              amount: dpAmount,
+              payment_method: 'midtrans',
+              status: 'pending',
+            })
+            .select()
+            .single();
+
+          if (payRecord) {
+            await supabase.from('invoices').insert({
+              invoice_number: `INV-DP-${Date.now().toString().slice(-6)}`,
+              payment_id: payRecord.id,
+              amount: dpAmount,
+              issued_at: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    }
+
+    // 4. Sync backup to paymentBilling
+    try {
+      const { createRegistrationAction } = await import('./paymentBilling');
+      await createRegistrationAction({
+        jamaah_name: fullName,
+        package_id: packageId,
+        status: 'Dikonfirmasi',
+      });
+    } catch (e) {
+      console.warn('Backup write skipped:', e);
+    }
+
+    revalidatePath('/dashboard/jamaah');
+    revalidatePath('/dashboard/jamaah/payment');
+    revalidatePath('/dashboard/jamaah/registrations');
+    revalidatePath('/packages');
+    revalidatePath('/dashboard/superadmin/packages');
+
+    return {
+      success: true,
+      redirectUrl: '/dashboard/jamaah/payment',
+    };
+  } catch (err: any) {
+    console.error('Error registering for package:', err);
+    return { success: false, error: err?.message || 'Gagal mendaftar paket umroh' };
+  }
+}
+
