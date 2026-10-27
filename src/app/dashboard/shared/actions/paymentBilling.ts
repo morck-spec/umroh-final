@@ -313,14 +313,20 @@ export async function getRegistrationBilling(idOrCode: string): Promise<Registra
             };
           });
 
-          if (remainingAmount > 0) {
+          const pendingPaymentsTotal = payments
+            .filter((p: any) => p.status !== 'paid' && p.status !== 'cancelled' && p.status !== 'rejected')
+            .reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+
+          const unpaidBalance = Math.max(0, pkgPrice - paidAmount - pendingPaymentsTotal);
+
+          if (unpaidBalance > 0) {
             bills.push({
               id: `b-remain-${match.id}`,
               code: `${regCode}-SISA`,
               type: 'Pelunasan',
-              amount: remainingAmount,
+              amount: unpaidBalance,
               paid: 0,
-              remaining: remainingAmount,
+              remaining: unpaidBalance,
               status: 'Belum Bayar',
               due_date: match.packages?.departure_date
                 ? new Date(match.packages.departure_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })

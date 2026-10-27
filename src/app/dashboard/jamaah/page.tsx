@@ -1,6 +1,7 @@
 import { AlignJustify, Banknote, FileText, CalendarDays } from 'lucide-react';
 import { PageHeader, StatCard, Card, rupiah, EmptyNote } from '@/components/dashboard/DashboardWidgets';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export const metadata = { title: 'Dashboard Jamaah | Travel Umroh & Haji' };
 
@@ -10,26 +11,34 @@ const badge = {
   no: 'bg-slate-100 text-slate-500',
 };
 
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key);
+}
+
 export default async function JamaahDashboard() {
   let name = 'Jamaah';
   let jamaahId: string | null = null;
   const supabase = await createClient();
+  const adminDb = getAdminClient() || supabase;
   let isAuthenticated = false;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       isAuthenticated = true;
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      const { data: p } = await adminDb.from('profiles').select('full_name').eq('id', user.id).single();
       if (p?.full_name) name = p.full_name;
-      const { data: j } = await supabase.from('jamaah').select('id, full_name').eq('profile_id', user.id).maybeSingle();
+      const { data: j } = await adminDb.from('jamaah').select('id, full_name').eq('profile_id', user.id).maybeSingle();
       if (j) jamaahId = j.id;
     }
   } catch {}
 
   // Only fallback to demo Ahmad Fauzi if NOT logged in at all (public demo view)
   if (!isAuthenticated && !jamaahId) {
-    const { data: defaultJamaah } = await supabase
+    const { data: defaultJamaah } = await adminDb
       .from('jamaah')
       .select('id, full_name')
       .ilike('full_name', '%ahmad fauzi%')
@@ -47,7 +56,7 @@ export default async function JamaahDashboard() {
 
   if (jamaahId) {
     const [regRes, docsRes, annRes] = await Promise.all([
-      supabase
+      adminDb
         .from('registrations')
         .select(`
           id,
@@ -59,8 +68,8 @@ export default async function JamaahDashboard() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabase.from('documents').select('*').eq('jamaah_id', jamaahId),
-      supabase
+      adminDb.from('documents').select('*').eq('jamaah_id', jamaahId),
+      adminDb
         .from('announcements')
         .select('*')
         .order('created_at', { ascending: false })

@@ -1,11 +1,20 @@
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getRegistrations } from '@/app/dashboard/shared/actions/registrations';
 import RegistrationsClient from '@/components/dashboard/RegistrationsClient';
 
 export const metadata = { title: 'Pendaftaran Saya | Trecer' };
 
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key);
+}
+
 export default async function JamaahRegistrationsPage() {
   const supabase = await createClient();
+  const adminDb = getAdminClient() || supabase;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,14 +25,14 @@ export default async function JamaahRegistrationsPage() {
 
   if (user) {
     isAuthenticated = true;
-    const { data: profile } = await supabase
+    const { data: profile } = await adminDb
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
       .single();
     userName = profile?.full_name?.toLowerCase() || '';
 
-    const { data: j } = await supabase
+    const { data: j } = await adminDb
       .from('jamaah')
       .select('id, full_name')
       .eq('profile_id', user.id)

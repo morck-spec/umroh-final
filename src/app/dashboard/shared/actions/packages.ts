@@ -331,14 +331,17 @@ export async function updatePackage(id: string, formData: FormData) {
 export async function registerForPackageAction(packageId: string): Promise<{ success: boolean; error?: string; redirectUrl?: string }> {
   try {
     const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
+    const userClient = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await userClient.auth.getUser();
 
     if (!user) {
       return { success: false, error: 'Silakan login terlebih dahulu untuk mendaftar paket' };
     }
+
+    const serviceSupabase = getServiceSupabase();
+    const supabase = serviceSupabase || userClient;
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -348,7 +351,7 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
 
     const fullName = profile?.full_name || user.user_metadata?.name || 'Jamaah';
 
-    // 1. Ensure jamaah record exists in Supabase
+    // 1. Ensure jamaah record exists in Supabase (Service Role bypasses RLS)
     let { data: jData } = await supabase
       .from('jamaah')
       .select('*')
@@ -366,7 +369,9 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
         .select()
         .single();
 
-      if (!jErr && newJ) {
+      if (jErr) {
+        console.error('Failed to create jamaah record:', jErr);
+      } else if (newJ) {
         jData = newJ;
       }
     }
@@ -377,7 +382,7 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
     const pkgPrice = pkg?.price || 28500000;
     const pkgName = pkg?.name || 'Paket Umroh';
 
-    // 3. Create registration in Supabase
+    // 3. Create registration in Supabase (Service Role bypasses RLS)
     if (jData) {
       const { data: existingReg } = await supabase
         .from('registrations')
@@ -387,7 +392,7 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
         .maybeSingle();
 
       if (!existingReg) {
-        const { data: newReg } = await supabase
+        const { data: newReg, error: regErr } = await supabase
           .from('registrations')
           .insert({
             jamaah_id: jData.id,
@@ -397,9 +402,11 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
           .select()
           .single();
 
-        if (newReg) {
+        if (regErr) {
+          console.error('Failed to create registration record:', regErr);
+        } else if (newReg) {
           const dpAmount = Math.round(pkgPrice * 0.2);
-          const { data: payRecord } = await supabase
+          const { data: payRecord, error: payErr } = await supabase
             .from('payments')
             .insert({
               registration_id: newReg.id,
@@ -410,7 +417,9 @@ export async function registerForPackageAction(packageId: string): Promise<{ suc
             .select()
             .single();
 
-          if (payRecord) {
+          if (payErr) {
+            console.error('Failed to create payment record:', payErr);
+          } else if (payRecord) {
             await supabase.from('invoices').insert({
               invoice_number: `INV-DP-${Date.now().toString().slice(-6)}`,
               payment_id: payRecord.id,
