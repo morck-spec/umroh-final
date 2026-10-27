@@ -80,9 +80,52 @@ export async function getAgentsList(): Promise<AgentItem[]> {
   if (!supabase) return local;
 
   try {
-    const { data: authData } = await supabase.auth.admin.listUsers();
-    const authUsers = authData?.users || [];
+    // 1. Fetch from Supabase agents table
+    const { data: dbAgents, error: dbError } = await supabase
+      .from('agents')
+      .select('*')
+      .order('created_at', { ascending: false });
 
+    // 2. Fetch auth users to detect account status
+    let authUsers: any[] = [];
+    try {
+      const { data: authData } = await supabase.auth.admin.listUsers();
+      authUsers = authData?.users || [];
+    } catch (e) {
+      // ignore auth check error
+    }
+
+    if (!dbError && dbAgents && dbAgents.length > 0) {
+      const result: AgentItem[] = dbAgents.map((item: any) => {
+        const emailLower = (item.email || '').toLowerCase();
+        const matchAuth = authUsers.find((u) => u.email?.toLowerCase() === emailLower);
+        const hasAccount = !!(item.user_id || matchAuth);
+        const userId = item.user_id || matchAuth?.id;
+
+        return {
+          id: item.id,
+          code: item.code || `AG-${item.id.slice(0, 4)}`,
+          name: item.name,
+          phone: item.phone || '',
+          email: item.email || '',
+          commission_rate: Number(item.commission_rate ?? 5),
+          branch: item.branch || 'Kantor Pusat Jakarta',
+          branch_id: item.branch_id || undefined,
+          address: item.address || '',
+          is_active: item.is_active ?? true,
+          status: (item.is_active ?? true) ? 'Aktif' : 'Nonaktif',
+          has_account: hasAccount,
+          user_id: userId,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        };
+      });
+
+      writeData(result);
+      return result;
+    }
+
+    // Fallback to local if table is empty or error
     let modified = false;
     const merged = local.map((agent) => {
       const matchAuth = authUsers.find(
@@ -101,12 +144,45 @@ export async function getAgentsList(): Promise<AgentItem[]> {
 
     return merged;
   } catch (err) {
-    console.error('Error checking agents sync:', err);
+    console.error('Error fetching agents:', err);
     return local;
   }
 }
 
 export async function getAgentById(id: string): Promise<AgentItem | null> {
+  const supabase = getServiceSupabase();
+  if (supabase) {
+    try {
+      const { data: item, error } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!error && item) {
+        return {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          phone: item.phone || '',
+          email: item.email || '',
+          commission_rate: Number(item.commission_rate ?? 5),
+          branch: item.branch || 'Kantor Pusat Jakarta',
+          branch_id: item.branch_id || undefined,
+          address: item.address || '',
+          is_active: item.is_active ?? true,
+          status: (item.is_active ?? true) ? 'Aktif' : 'Nonaktif',
+          has_account: !!item.user_id,
+          user_id: item.user_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to query single agent from Supabase:', e);
+    }
+  }
+
   const agents = await getAgentsList();
   return agents.find((a) => a.id === id) || null;
 }
@@ -177,7 +253,7 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
             email_confirm: true,
             user_metadata: {
               name: payload.name,
-              role: 'mitra_agen',
+              role: 'mitra',
             },
           });
 
@@ -189,7 +265,7 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
             await supabase.from('profiles').upsert({
               id: userId,
               full_name: payload.name,
-              role: 'mitra_agen',
+              role: 'mitra',
               phone: payload.phone || null,
             });
           }
@@ -199,10 +275,30 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
       }
     }
 
-    if (existingIndex >= 0) {
-      // Update existing
+    if (agentId) {
+      // 1. Update in Supabase
+      if (supabase) {
+        await supabase
+          .from('agents')
+          .update({
+            name: payload.name.trim(),
+            branch: payload.branch || 'Kantor Pusat Jakarta',
+            phone: payload.phone?.trim() || null,
+            email: payload.email?.trim() || null,
+            commission_rate: rate,
+            is_active: isActive,
+            address: payload.address?.trim() || null,
+            user_id: userId || undefined,
+            updated_at: now,
+          })
+          .eq('id', agentId);
+      }
+
+      // 2. Update local fallback
       const updatedItem: AgentItem = {
-        ...agents[existingIndex],
+        ...(existingIndex >= 0 ? agents[existingIndex] : {}),
+        id: agentId,
+        code,
         name: payload.name.trim(),
         branch: payload.branch || 'Kantor Pusat Jakarta',
         phone: payload.phone?.trim() || '',
@@ -212,11 +308,15 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
         status,
         address: payload.address?.trim() || '',
         has_account: hasAccount,
-        user_id: userId || agents[existingIndex].user_id,
+        user_id: userId || (existingIndex >= 0 ? agents[existingIndex].user_id : undefined),
         updated_at: now,
       };
 
-      agents[existingIndex] = updatedItem;
+      if (existingIndex >= 0) {
+        agents[existingIndex] = updatedItem;
+      } else {
+        agents.unshift(updatedItem);
+      }
       writeData(agents);
 
       await recordActivityLog({
@@ -228,10 +328,35 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
       revalidateAll();
       return { success: true, id: agentId };
     } else {
-      // Create new
-      const id = `ag-${Date.now()}`;
+      // 1. Insert into Supabase
+      let generatedId = `ag-${Date.now()}`;
+      if (supabase) {
+        const { data: inserted, error: insertError } = await supabase
+          .from('agents')
+          .insert({
+            code,
+            name: payload.name.trim(),
+            branch: payload.branch || 'Kantor Pusat Jakarta',
+            phone: payload.phone?.trim() || null,
+            email: payload.email?.trim() || null,
+            commission_rate: rate,
+            is_active: isActive,
+            address: payload.address?.trim() || null,
+            user_id: userId || null,
+            created_at: now,
+            updated_at: now,
+          })
+          .select()
+          .single();
+
+        if (!insertError && inserted?.id) {
+          generatedId = inserted.id;
+        }
+      }
+
+      // 2. Insert into local fallback
       const newItem: AgentItem = {
-        id,
+        id: generatedId,
         code,
         name: payload.name.trim(),
         branch: payload.branch || 'Kantor Pusat Jakarta',
@@ -257,7 +382,7 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
       });
 
       revalidateAll();
-      return { success: true, id };
+      return { success: true, id: generatedId };
     }
   } catch (err: any) {
     console.error('Error saving agent:', err);
@@ -267,6 +392,11 @@ export async function saveAgent(payload: AgentInput): Promise<{ success: boolean
 
 export async function deleteAgent(id: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const supabase = getServiceSupabase();
+    if (supabase) {
+      await supabase.from('agents').delete().eq('id', id);
+    }
+
     const agents = readData();
     const target = agents.find((a) => a.id === id);
 
