@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
-import { AlignJustify, CreditCard, Loader2 } from 'lucide-react';
+import { AlignJustify, CreditCard, Loader2, Receipt } from 'lucide-react';
 import { RegistrationBilling, BillItem } from '@/app/dashboard/shared/actions/paymentBilling';
 import { getSnapToken, completePaymentFromSnap } from '@/app/dashboard/shared/actions/midtrans';
 
@@ -271,7 +271,17 @@ export default function JamaahPaymentClient({ registration }: JamaahPaymentClien
             </div>
 
             {/* Action: Bayar Sekarang -> Triggers Official Midtrans Snap Popup! */}
-            {bill.status !== 'Lunas' && (
+            {bill.status === 'Lunas' ? (
+              <div className="flex-shrink-0 self-start md:self-center">
+                <Link
+                  href={`/receipt/${bill.id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[13px] font-medium hover:bg-emerald-100 hover:border-emerald-300 transition-all cursor-pointer"
+                >
+                  <Receipt className="w-4 h-4 text-emerald-600" />
+                  <span>Lihat Kwitansi</span>
+                </Link>
+              </div>
+            ) : (
               <div className="flex-shrink-0 self-start md:self-center">
                 <button
                   type="button"
