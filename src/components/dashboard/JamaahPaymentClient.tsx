@@ -47,69 +47,11 @@ export default function JamaahPaymentClient({ registration }: JamaahPaymentClien
     });
   };
 
-  // Fallback data matching Screenshot 1 if registration is empty
-  const defaultBills: BillItem[] = [
-    {
-      id: '33',
-      code: 'REG-00009-DP',
-      type: 'Uang Muka (DP)',
-      amount: 35000000,
-      paid: 0,
-      remaining: 35000000,
-      status: 'Belum Bayar',
-      due_date: '01 Aug 2026',
-    },
-    {
-      id: '34',
-      code: 'REG-00009-C1',
-      type: 'Cicilan',
-      amount: 43333333,
-      paid: 0,
-      remaining: 43333333,
-      status: 'Belum Bayar',
-      due_date: '30 Aug 2026',
-    },
-    {
-      id: '35',
-      code: 'REG-00009-C2',
-      type: 'Cicilan',
-      amount: 43333333,
-      paid: 0,
-      remaining: 43333333,
-      status: 'Belum Bayar',
-      due_date: '30 Sep 2026',
-    },
-    {
-      id: '36',
-      code: 'REG-00009-C3',
-      type: 'Cicilan',
-      amount: 43333334,
-      paid: 0,
-      remaining: 43333334,
-      status: 'Belum Bayar',
-      due_date: '30 Oct 2026',
-    },
-  ];
-
-  const reg = registration || {
-    id: '1',
-    code: 'REG-00001',
-    jamaah: { name: 'Ahmad Fauzi', passport: '-', phone: '-' },
-    package: { id: '', name: 'Paket Umroh', type: 'Umroh', price: 0, departure_date: '-' },
-    status: 'Pending',
-    reg_date: '-',
-    agent: '-',
-    guide: '-',
-    branch: '-',
-    total_amount: 0,
-    paid_amount: 0,
-    remaining_amount: 0,
-    payment_status: 'Belum Bayar' as const,
-    bills: [],
-  };
-  const bills = reg.bills || [];
+  const reg = registration;
+  const bills = reg?.bills || [];
 
   async function handleBayarSekarang(bill: BillItem) {
+    if (!reg) return;
     setLoadingBillId(bill.id);
 
     try {
@@ -165,8 +107,45 @@ export default function JamaahPaymentClient({ registration }: JamaahPaymentClien
       }
     } catch (err: any) {
       setLoadingBillId(null);
-      alert('Terjadi kesalahan saat memproses pembayaran: ' + (err?.message || err));
     }
+  }
+
+  if (!reg || bills.length === 0) {
+    return (
+      <div className="space-y-4 max-w-7xl mx-auto">
+        <div>
+          <div className="flex items-center gap-1.5 text-[12px] text-slate-400 mb-1">
+            <Link href="/dashboard/jamaah" className="hover:text-slate-600 transition-colors">
+              Beranda
+            </Link>
+            <span>&gt;</span>
+            <span className="text-slate-500 font-normal">Pembayaran</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            Pembayaran Umroh
+          </h1>
+          <p className="text-[12px] text-slate-500 mt-0.5">
+            Pantau tagihan dan lakukan pembayaran dengan mudah
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs p-10 text-center flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+            <CreditCard className="w-8 h-8 text-slate-400" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 mb-1">Belum Ada Tagihan Pembayaran</h2>
+          <p className="text-sm text-slate-500 max-w-md mb-6">
+            Akun Anda saat ini belum terdaftar pada paket umroh manapun. Tagihan pembayaran akan diterbitkan secara otomatis setelah Anda memilih dan mendaftar paket umroh.
+          </p>
+          <Link
+            href="/packages"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium shadow-xs hover:bg-emerald-700 transition-colors"
+          >
+            Lihat Pilihan Paket
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

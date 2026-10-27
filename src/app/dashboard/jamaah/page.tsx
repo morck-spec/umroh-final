@@ -11,13 +11,15 @@ const badge = {
 };
 
 export default async function JamaahDashboard() {
-  let name = 'Ahmad Fauzi';
+  let name = 'Jamaah';
   let jamaahId: string | null = null;
   const supabase = await createClient();
+  let isAuthenticated = false;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      isAuthenticated = true;
       const { data: p } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
       if (p?.full_name) name = p.full_name;
       const { data: j } = await supabase.from('jamaah').select('id, full_name').eq('profile_id', user.id).maybeSingle();
@@ -25,8 +27,8 @@ export default async function JamaahDashboard() {
     }
   } catch {}
 
-  // If no auth user or not matched, find default demo jamaah Ahmad Fauzi in Supabase
-  if (!jamaahId) {
+  // Only fallback to demo Ahmad Fauzi if NOT logged in at all (public demo view)
+  if (!isAuthenticated && !jamaahId) {
     const { data: defaultJamaah } = await supabase
       .from('jamaah')
       .select('id, full_name')
@@ -70,19 +72,20 @@ export default async function JamaahDashboard() {
     announcements = annRes.data || [];
   }
 
+  const hasRegistered = !!reg;
   const pkgPrice = Number(reg?.packages?.price || 0);
-  const total = pkgPrice > 0 ? pkgPrice : 28500000;
+  const total = pkgPrice;
   const paid = (reg?.payments || [])
     .filter((p: any) => p.status === 'paid')
     .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
 
   const departDateStr = reg?.packages?.departure_date;
-  const depart = departDateStr ? new Date(departDateStr) : new Date(2026, 11, 10);
-  const days = Math.max(0, Math.ceil((depart.getTime() - Date.now()) / 86400000));
+  const depart = departDateStr ? new Date(departDateStr) : null;
+  const days = depart ? Math.max(0, Math.ceil((depart.getTime() - Date.now()) / 86400000)) : 0;
 
-  const packageName = reg?.packages?.name || 'Umroh Reguler';
-  const durationDays = reg?.packages?.duration_days || 10;
-  const regStatus = reg?.status === 'approved' ? 'Dikonfirmasi' : reg?.status ? 'Pending' : 'Dikonfirmasi';
+  const packageName = reg?.packages?.name || 'Belum Terdaftar';
+  const durationDays = reg?.packages?.duration_days || 0;
+  const regStatus = reg?.status === 'approved' ? 'Dikonfirmasi' : reg?.status === 'pending' ? 'Pending' : reg?.status ? reg.status : 'Belum Terdaftar';
 
   // Checklist mapping based on real Supabase documents table
   const docTypes: { typeKey: string; name: string }[] = [
@@ -118,36 +121,56 @@ export default async function JamaahDashboard() {
           icon={Banknote}
           tone="green"
           label="Progress Pembayaran"
-          value={`${progressPercent}%`}
-          sub={`${rupiah(paid)} / ${rupiah(total)}`}
+          value={hasRegistered ? `${progressPercent}%` : '0%'}
+          sub={hasRegistered ? `${rupiah(paid)} / ${rupiah(total)}` : 'Belum ada tagihan'}
         />
         <StatCard icon={FileText} tone="teal" label="Dokumen Terverifikasi" value={`${verified} / ${docs.length}`} />
         <StatCard
           icon={CalendarDays}
           tone="purple"
           label="Hitung Mundur"
-          value={`${days} hari`}
-          sub={depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+          value={depart ? `${days} hari` : '-'}
+          sub={depart ? depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Belum ada jadwal'}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
         <Card title="Progress Pembayaran" className="lg:col-span-2">
-          <div className="flex justify-between text-[11px] text-slate-600 mb-2">
-            <span>Terbayar</span>
-            <span className="font-semibold text-slate-800">{rupiah(paid)}</span>
-          </div>
-          <div className="h-2.5 rounded-full bg-slate-100">
-            <div className="h-2.5 rounded-full bg-[#0F9488]" style={{ width: `${progressPercent}%` }} />
-          </div>
-          <div className="flex justify-between text-[11px] text-slate-600 mt-2 pb-4 border-b border-slate-100">
-            <span>Sisa Tagihan</span>
-            <span className="font-semibold text-red-600">{rupiah(Math.max(0, total - paid))}</span>
-          </div>
-          <p className="text-[11px] font-medium text-slate-800 mt-4">{packageName}</p>
-          <p className="text-[9px] text-slate-400">
-            Umroh · {durationDays} hari · Berangkat {depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </p>
+          {hasRegistered ? (
+            <>
+              <div className="flex justify-between text-[11px] text-slate-600 mb-2">
+                <span>Terbayar</span>
+                <span className="font-semibold text-slate-800">{rupiah(paid)}</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-slate-100">
+                <div className="h-2.5 rounded-full bg-[#0F9488]" style={{ width: `${progressPercent}%` }} />
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-600 mt-2 pb-4 border-b border-slate-100">
+                <span>Sisa Tagihan</span>
+                <span className="font-semibold text-red-600">{rupiah(Math.max(0, total - paid))}</span>
+              </div>
+              <p className="text-[11px] font-medium text-slate-800 mt-4">{packageName}</p>
+              <p className="text-[9px] text-slate-400">
+                Umroh · {durationDays} hari · Berangkat {depart ? depart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+              </p>
+            </>
+          ) : (
+            <div className="py-8 px-4 text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                <Banknote className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-semibold text-slate-800 mb-1">Belum Terdaftar di Paket Umroh</p>
+              <p className="text-xs text-slate-500 max-w-sm mb-4">
+                Pilih paket umroh yang sesuai dan lakukan pendaftaran untuk mulai merencanakan perjalanan ibadah Anda.
+              </p>
+              <a
+                href="/packages"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+              >
+                Lihat Pilihan Paket
+              </a>
+            </div>
+          )}
         </Card>
 
         <Card title="Checklist Dokumen">
